@@ -1,0 +1,19 @@
+databases:
+  name: minamo_db
+  user: minamo_user
+  databaseName: minamo_db
+  plan: free
+services:
+  name: minamo-editor-database
+  type: web
+  plan: free
+  runtime: python
+  buildCommand: "./build.sh"
+  startCommand: "python -m gunicorn minamo_editor.asgi:application -k uvicorn.workers.UvicornWorker"
+  envVars:
+    - key: DATABASE_URL
+      fromDatabase:
+        name: minamo_db
+        property: connectionString
+    - key: WEB_CONCURRENCY
+      value: 4
