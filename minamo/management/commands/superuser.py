@@ -6,9 +6,17 @@ User = get_user_model()
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        if not User.objects.filter(username=os.environ.get('ADMIN_USERNAME')).exists():
+        admin_username = os.environ.get('ADMIN_USERNAME')
+        admin_password = os.environ.get('ADMIN_PASSWORD')
+        admin_email = os.environ.get('ADMIN_EMAIL', '')
+
+        if not admin_username or not admin_password:
+            self.stdout.write('ADMIN_USERNAME or ADMIN_PASSWORD is not set. Skipping superuser creation.')
+            return
+
+        if not User.objects.filter(username=admin_username).exists():
             User.objects.create_superuser(
-                username=os.environ.get('ADMIN_USERNAME'),
-                password=os.environ.get('ADMIN_PASSWORD'),
-                email =''
+                username=admin_username,
+                password=admin_password,
+                email=admin_email,
             )
