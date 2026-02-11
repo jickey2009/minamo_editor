@@ -1,0 +1,119 @@
+{% extends 'minamo/base.html' %}
+
+{% block title %}Chapter {{ chapter.title }}{% endblock %}
+
+{% block content %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'minamo:book_detail' chapter.book.id %}">{{ chapter.book.title }}</a></li>
+  <li class="breadcrumb-item active">{{ chapter.title }}</li>
+</ol>
+<a href="{% url 'minamo:new_section' chapter.book.id chapter.id %}" class="btn btn-dark mb-3">新しい節を追加</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>タイトル</th>
+            <th>内容の見出し</th>
+            <th>文字数</th>
+            <th><input type="checkbox" id="swap-toggle"><label for="swap-toggle">並べ替え</label></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for section in sections %}
+        <tr>
+            <td>
+                <a href="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}" id="name{{ section.id }}">{{ section.title }}</a>
+                <i class="bi bi-pencil-square rename-icon" id="rename{{ section.id }}" style="cursor:pointer;"></i>
+                <form method="post" action="{% url 'minamo:rename_section' chapter.book.id chapter.id section.id %}" class="d-inline" id="form{{ section.id }}">
+                    {% csrf_token %}
+                    <input type="text" name="title" value="{{ section.title }}" class="form-control form-control-sm d-none" id="input{{ section.id }}" style="width: auto; display: inline;">
+                    <button type="submit" class="btn btn-primary btn-sm d-none" id="save{{ section.id }}">保存</button>
+                    <button type="button" class="btn btn-secondary btn-sm d-none" id="cancel{{ section.id }}">戻る</button>
+                </form>
+            </td>
+            <td>{{ section.content_head }}</td>
+            <td>{{ section.length }}文字</td>
+            <td>
+                <a href="{% url 'minamo:section_detail' chapter.book.id chapter.id section.id %}" class="btn btn-info btn-sm">閲覧</a>
+                {% if not forloop.first %}
+                <a href="{% url 'minamo:swap_section' chapter.book.id chapter.id section.id 1 %}" class="btn btn-dark btn-sm arrow d-none">↑</a>
+                {% endif %}
+                {% if not forloop.last %}
+                <a href="{% url 'minamo:swap_section' chapter.book.id chapter.id section.id 3 %}" class="btn btn-dark btn-sm arrow d-none">↓</a>
+                {% endif %}
+                <a class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ section.id }}">削除</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">まだ節がありません。新しい節を追加して始めましょう！</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="mb-3">
+    <a href="{% url 'minamo:book_detail' chapter.book.id %}" class="btn btn-secondary">本に戻る</a>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% for section in sections %}
+<div class="modal fade" id="deleteModal{{ section.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ section.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel{{ section.id }}">節の削除確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        本当に「{{ section.title }}」を削除しますか？この操作は元に戻せません。
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <a href="{% url 'minamo:delete_section' chapter.book.id chapter.id section.id %}" class="btn btn-danger">削除</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+{{ sections_json|json_script:"sections-data" }}
+<script>
+$(document).ready(function() {
+    const sections = JSON.parse(document.getElementById('sections-data').textContent);
+    sections.forEach(section => {
+        const sectionId = section.id;
+
+        $('#rename' + sectionId).click(function() {
+            $(this).addClass('d-none');
+            $('#name' + sectionId).addClass('d-none');
+            $('#input' + sectionId).removeClass('d-none');
+            $('#save' + sectionId).removeClass('d-none');
+            $('#cancel' + sectionId).removeClass('d-none');
+        });
+
+        $('#cancel' + sectionId).click(function() {
+            $('#input' + sectionId).addClass('d-none');
+            $('#save' + sectionId).addClass('d-none');
+            $('#cancel' + sectionId).addClass('d-none');
+            $('#name' + sectionId).removeClass('d-none');
+            $('#rename' + sectionId).removeClass('d-none');
+        });
+    });
+    $('#swap-toggle').change(function() {
+        if ($(this).is(':checked')) {
+            $('.arrow').removeClass('d-none');
+            $('.btn-danger').addClass('d-none');
+            $('.btn-info').addClass('d-none');
+        } else {
+            $('.arrow').addClass('d-none');
+            $('.btn-danger').removeClass('d-none');
+            $('.btn-info').removeClass('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

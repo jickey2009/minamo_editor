@@ -1,0 +1,13 @@
+{% extends "minamo/base.html" %}
+{% load bootstrap4 %}
+{% block title %}Minamo Editor - ログイン{% endblock %}
+
+{% block content %}
+<h2>ログイン</h2>
+<form method="post" action="{% url 'minamo:login' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">ログイン</button>
+</form>
+<a href="{% url 'minamo:signup' %}" class="btn btn-secondary mt-3">アカウント作成はこちら</a>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "minamo/base.html" %}
+{% load bootstrap4 %}
+{% block title %}Minamo Editor - 設定{% endblock %}
+
+{% block content %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
+  <li class="breadcrumb-item active">設定</li>
+</ol>
+<h2>ユーザー設定</h2>
+<form method="post" action="{% url 'minamo:settings' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+<button type="submit" class="btn btn-primary">保存</button>
+</form>
+<a href="{% url 'minamo:index' %}" class="btn btn-secondary">戻る</a>
+{% endblock %}  

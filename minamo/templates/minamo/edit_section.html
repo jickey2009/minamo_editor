@@ -1,0 +1,33 @@
+{% extends "minamo/base.html" %}   
+
+{% block title %}セクション編集{% endblock %}
+
+{% block content %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'minamo:book_detail' book.id %}">{{ book.title }}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'minamo:chapter_detail' book.id chapter.id %}">{{ chapter.title }}</a></li>
+  <li class="breadcrumb-item active">{{ section.title }}</li>
+</ol>
+<form method="post">
+    {% csrf_token %}
+    <textarea name="content" rows="20" cols="100" class="form-control">{{ section.content }}</textarea>
+    <button type="submit" class="btn btn-primary" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}">保存</button>
+    <button type="submit" class="btn btn-primary" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">保存して戻る</button> 
+    <a href="{% url 'minamo:chapter_detail' chapter.book.id chapter.id %}" class="btn btn-danger">保存せずに戻る</a>
+</form>
+
+{% endblock %} 
+
+{% block extra_js %}
+{{ configuration_json|json_script:"configuration" }}
+<script>
+$(document).ready(function() {
+    const config = JSON.parse(document.getElementById('configuration').textContent);
+    $('textarea').css('font-size', config.text_size + 'px');
+    $('textarea').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
+    $('textarea').css('line-height', (config.text_size * 1.5) + 'px');
+    $('textarea').css('width', (config.text_size * config.textarea_width + 45) + 'px');
+});
+</script>
+{% endblock %}

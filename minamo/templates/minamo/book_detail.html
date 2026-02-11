@@ -1,0 +1,113 @@
+{% extends "minamo/base.html" %}
+
+{% block title %}Book Detail - {{ book.title }}{% endblock %}
+
+{% block content %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
+  <li class="breadcrumb-item active">{{ book.title }}</li>
+</ol>
+<a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3">新しい章を追加</a>
+<p>{{ chapters.count }} 章</p>
+    <table class="table table-striped">
+    <tr>
+        <th>章</th>
+        <th>文字数</th>
+        <th>作成日時</th>
+        <th>更新日時</th>
+        <th><input type="checkbox" id="swap-toggle"><label for="swap-toggle">並べ替え</label></th>
+    </tr>
+
+    {% for chapter in chapters %}
+    <tr>
+        <td>
+            <a href="{% url 'minamo:chapter_detail' book.id chapter.id %}" id="name{{chapter.id}}">{{ chapter.title }}</a>
+            <i class="bi bi-pencil-square rename-icon" id="rename{{ chapter.id }}" style="cursor:pointer;"></i>
+            <form method="post" action="{% url 'minamo:rename_chapter' book.id chapter.id %}" class="d-inline" id="form{{ chapter.id }}">
+                {% csrf_token %}
+                <input type="text" name="title" value="{{ chapter.title }}" class="form-control form-control-sm d-none" id="input{{ chapter.id }}" style="width: auto; display: inline;">
+                <button type="submit" class="btn btn-primary btn-sm d-none" id="save{{ chapter.id }}">保存</button>
+                <button type="button" class="btn btn-secondary btn-sm d-none" id="cancel{{ chapter.id }}">戻る</button>
+            </form>
+        </td>
+        <td>{{ chapter.length }}文字</td>
+        <td>{{ chapter.created_date }}</td>
+        <td>{{ chapter.updated_date }}</td>
+        <td>
+            {% if not forloop.first %}
+            <a href="{% url 'minamo:swap_chapter' book.id chapter.id 1 %}" class="btn btn-dark btn-sm arrow d-none">↑</a>
+            {% endif %}
+            {% if not forloop.last %}
+            <a href="{% url 'minamo:swap_chapter' book.id chapter.id 3 %}" class="btn btn-dark btn-sm arrow d-none">↓</a>
+            {% endif %}
+            <a class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ chapter.id }}">削除</a>
+        </td>
+    </tr>
+    {% empty %} 
+    <tr>
+        <td colspan="5">まだ章がありません。新しい章を追加して始めましょう！</td>
+    </tr>
+    {% endfor %}
+
+</table>
+<a href="{% url 'minamo:export_book' book.id %}" class="btn btn-primary">本をエクスポート</a>
+<a href="{% url 'minamo:index' %}" class="btn btn-secondary">ダッシュボードに戻る</a>
+
+<!-- Delete Confirmation Modal -->
+{% for chapter in chapters %}
+<div class="modal fade" id="deleteModal{{ chapter.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ chapter.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">章の削除確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        本当に「{{ chapter.title }}」を削除しますか？この操作は元に戻せません。
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <a href="{% url 'minamo:delete_chapter' book.id chapter.id %}" class="btn btn-danger">削除</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}    
+
+{% block extra_js %}
+{{ chapters_json|json_script:"chapters-data" }}
+<script>
+$(document).ready(function() {
+    const chapters = JSON.parse(document.getElementById('chapters-data').textContent);
+    chapters.forEach(chapter => {
+        const chapterId = chapter.id;
+
+        $('#rename' + chapterId).click(function() {
+            $('#name' + chapterId).addClass('d-none');
+            $('#input' + chapterId).removeClass('d-none');
+            $('#save' + chapterId).removeClass('d-none');
+            $('#cancel' + chapterId).removeClass('d-none');
+            $(this).addClass('d-none');
+        });
+        $('#cancel' + chapterId).click(function() {
+            $('#name' + chapterId).removeClass('d-none');
+            $('#input' + chapterId).addClass('d-none');
+            $('#save' + chapterId).addClass('d-none');
+            $('#cancel' + chapterId).addClass('d-none');
+            $('#rename' + chapterId).removeClass('d-none');
+        });
+    });
+    $('#swap-toggle').change(function() {
+        if ($(this).is(':checked')) {
+            $('.arrow').removeClass('d-none');
+            $('.btn-danger').addClass('d-none');
+        } else {
+            $('.arrow').addClass('d-none');
+            $('.btn-danger').removeClass('d-none');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "minamo/base.html" %}
+{% load bootstrap4 %}
+{% block title %}Minamo Editor{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item active">ホーム</li>
+</ol>
+<a href="{% url 'minamo:new_book' %}" class="btn btn-dark mb-3">新しい本を作成</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>タイトル</th>
+            <th>説明</th>
+            <th>文字数</th>
+            <th>作成日時</th>
+            <th>更新日時</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for book in books %}
+        <tr>
+            <td>
+                <a href="{% url 'minamo:book_detail' book.id %}" id="name{{ book.id }}">{{ book.title }}</a>
+                <i class="bi bi-pencil-square rename-icon" id="rename{{ book.id }}" style="cursor:pointer;"></i> 
+                <form method="post" action="{% url 'minamo:rename_book' book.id %}" class="d-inline" id="form{{ book.id }}">
+                    {% csrf_token %}
+                    <input type="text" name="title" value="{{ book.title }}" class="form-control form-control-sm d-none" id="input{{ book.id }}" style="width: auto; display: inline;">
+                    <button type="submit" class="btn btn-primary btn-sm d-none" id="save{{ book.id }}">保存</button>
+                    <button type="button" class="btn btn-secondary btn-sm d-none" id="cancel{{ book.id }}">戻る</button>
+                </form>
+            </td>
+            <td>{{ book.description }}</td>
+            <td>{{ book.length }}文字</td>
+            <td>{{ book.created_date|date:"Y-m-d" }}</td>
+            <td>{{ book.updated_date|date:"Y-m-d" }}</td>
+            <td>
+                <a href="{% url 'minamo:edit_book' book.id %}" class="btn btn-dark btn-sm">編集</a>
+                <a class="btn btn-danger btn-sm delete-button" data-bs-toggle="modal" data-bs-target="#deleteModal{{ book.id }}">削除</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">まだ本がありません。新しい本を作成して始めましょう！</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    <div class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+<a href="{% url 'minamo:settings' %}" class="btn btn-secondary mt-3">ユーザー設定</a>
+<form action="{% url 'minamo:logout' %}" method="post" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary mt-3">ログアウト</button>
+</form>
+
+<!-- Delete Confirmation Modal -->
+{% for book in books %}
+<div class="modal fade" id="deleteModal{{ book.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ book.id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel{{ book.id }}">本の削除確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        本当に「{{ book.title }}」を削除しますか？この操作は元に戻せません。
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <a href="{% url 'minamo:delete_book' book.id %}" class="btn btn-danger">削除</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endif %}
+{% if not user.is_authenticated %}
+<div class="alert alert-info" role="alert">
+    Minamo Editorへようこそ！アカウントを作成して、あなたの執筆活動を始めましょう。
+</div>
+<a href="{% url 'minamo:signup' %}" class="btn btn-primary">アカウント作成</a>
+<a href="{% url 'minamo:login' %}" class="btn btn-secondary mt-3">ログイン</a>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{{ books_json|json_script:"books-data" }}
+<script>
+    $(document).ready(function() {
+        const books = JSON.parse(document.getElementById("books-data").textContent);
+        books.forEach((book) => {
+            const suffix = book.id;
+            $("#rename" + suffix).click(function() {
+                $(this).addClass("d-none");
+                $("#name" + suffix).addClass("d-none");
+                $("#form" + suffix).removeClass("d-none");
+                $("#input" + suffix).removeClass("d-none");
+                $("#save" + suffix).removeClass("d-none");
+                $("#cancel" + suffix).removeClass("d-none");
+            });
+            $("#cancel" + suffix).click(function() {
+                $("#name" + suffix).removeClass("d-none");
+                $("#form" + suffix).addClass("d-none");
+                $("#input" + suffix).addClass("d-none");
+                $("#save" + suffix).addClass("d-none");
+                $("#cancel" + suffix).addClass("d-none");
+                $("#rename" + suffix).removeClass("d-none");
+            });
+        });
+    });
+</script>
+{% endblock %}

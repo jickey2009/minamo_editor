@@ -1,0 +1,12 @@
+{% extends "minamo/base.html" %}   
+
+{% block title %}Create New Section{% endblock %}
+
+{% block content %}
+<h1>Create New Section</h1>
+<form action="{% url 'minamo:new_section' chapter.book.id chapter.id %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Create Section</button>
+</form>
+{% endblock %}

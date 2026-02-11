@@ -1,0 +1,10 @@
+{% extends "minamo/base.html" %}
+
+{% block title %}Section Detail{% endblock %}
+
+{% block content %}
+<h1>Section: {{ section.title }}</h1>
+<p>{{ section.content }}</p>
+<a href="{% url 'minamo:edit_section' section.chapter.book.id section.chapter.id section.id %}" class="btn btn-warning btn-sm">Edit Section</a>
+<a href="{% url 'minamo:chapter_detail' section.chapter.book.id section.chapter.id %}" class="btn btn-secondary btn-sm">Back to Chapter</a>
+{% endblock %}  
