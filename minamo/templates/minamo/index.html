@@ -8,46 +8,49 @@
   <li class="breadcrumb-item active">ホーム</li>
 </ol>
 <a href="{% url 'minamo:new_book' %}" class="btn btn-dark mb-3">新しい本を作成</a>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>タイトル</th>
-            <th>説明</th>
-            <th>文字数</th>
-            <th>作成日時</th>
-            <th>更新日時</th>
-            <th>操作</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for book in books %}
-        <tr>
-            <td>
-                <a href="{% url 'minamo:book_detail' book.id %}" id="name{{ book.id }}">{{ book.title }}</a>
-                <i class="bi bi-pencil-square rename-icon" id="rename{{ book.id }}" style="cursor:pointer;"></i> 
-                <form method="post" action="{% url 'minamo:rename_book' book.id %}" class="d-inline" id="form{{ book.id }}">
+<div class="container text-left">
+    {% for book in books %}
+    <div class="card border-0 mb-3">
+        <div class="row">
+            <div class="col-md-6">
+                <a href="{% url 'minamo:book_detail' book.id %}" class="item-title ms-2" id="name{{ book.id }}">{{ book.title }}</a>
+                <form id="form{{ book.id }}" class="d-none" method="post" action="{% url 'minamo:rename_book' book.id %}" style="display: inline;">
                     {% csrf_token %}
-                    <input type="text" name="title" value="{{ book.title }}" class="form-control form-control-sm d-none" id="input{{ book.id }}" style="width: auto; display: inline;">
-                    <button type="submit" class="btn btn-primary btn-sm d-none" id="save{{ book.id }}">保存</button>
-                    <button type="button" class="btn btn-secondary btn-sm d-none" id="cancel{{ book.id }}">戻る</button>
+                    <input id="input{{ book.id }}" type="text" name="title" value="{{ book.title }}" class="form-control d-inline-block w-auto">
+                    <button id="save{{ book.id }}" type="submit" class="btn btn-primary d-none">保存</button>
+                    <button id="cancel{{ book.id }}" type="button" class="btn btn-secondary d-none">キャンセル</button>
                 </form>
-            </td>
-            <td>{{ book.description }}</td>
-            <td>{{ book.length }}文字</td>
-            <td>{{ book.created_date|date:"Y-m-d" }}</td>
-            <td>{{ book.updated_date|date:"Y-m-d" }}</td>
-            <td>
-                <a href="{% url 'minamo:edit_book' book.id %}" class="btn btn-dark btn-sm">編集</a>
-                <a class="btn btn-danger btn-sm delete-button" data-bs-toggle="modal" data-bs-target="#deleteModal{{ book.id }}">削除</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="6">まだ本がありません。新しい本を作成して始めましょう！</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                <button id="rename{{ book.id }}" class="btn"><i class="bi bi-pencil"></i></button>
+            </div>
+            
+            <div class="col-md-6 text-end">
+                <div class="col-md-2 d-inline-block me-3"><p class="align-middle text-nowrap item-text">{{book.length}}文字</p></div>
+                <div class="d-inline-block mx-3 text-start">
+                    <p class="mb-0 item-subtext">作成:</p>
+                    <p class="mb-0 text-nowrap item-text">{{ book.created_date|date:"Y-m-d" }}</p>
+                </div>
+                <div class="d-inline-block mx-3 text-start">
+                    <p class="mb-0 item-subtext">更新:</p>
+                    <p class="mb-0 text-nowrap item-text">{{ book.updated_date|date:"Y-m-d" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-9"><p class="item-text ms-4">{{ book.description }}</p></div>
+            <div class="col-md-3 mb-2 text-end">
+                <a href="{% url 'minamo:edit_book' book.id %}" class="btn btn-dark me-2">編集</a>
+                <button class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ book.id }}">削除</button>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-light" role="alert">
+        まだ本がありません。新しい本を作成して、執筆を始めましょう！
+    </div>
+    {% endfor %}
+</div>
+    
+
 
 <div class="pagination">
     <div class="step-links">

@@ -179,7 +179,7 @@ def edit_section(request, book_id, chapter_id, section_id, return_url =None):
         section.content = request.POST.get('content', '')
         section.length = len(section.content)
         if section.content:
-            section.content_head = section.content.splitlines()[0][:15]
+            section.content_head = section.content[:75]
         section.save()
         length_diff = section.length - length
         chapter.length += length_diff
