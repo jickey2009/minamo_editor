@@ -1,22 +1,49 @@
 {% extends "minamo/base.html" %}   
 
-{% block title %}セクション編集{% endblock %}
+{% block title %}{{ section.title }} - 編集{% endblock %}
 
 {% block content %}
-<ol class="breadcrumb">
+<ol class="breadcrumb hideable">
   <li class="breadcrumb-item">ホーム</li>
   <li class="breadcrumb-item">{{ book.title }}</li>
   <li class="breadcrumb-item">{{ chapter.title }}</li>
   <li class="breadcrumb-item active">{{ section.title }}</li>
 </ol>
-<form method="post">
+<button class="btn btn-secondary mb-3 hideable" id="hide-buttons">ボタンを非表示</button>
+<form method="post" id="edit-section-form">
     {% csrf_token %}
-    <textarea name="content" rows="20" cols="100" class="form-control">{{ section.content }}</textarea>
-    <button type="submit" class="btn btn-primary" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}">保存</button>
-    <button type="submit" class="btn btn-primary" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">保存して戻る</button> 
-    <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmModal">保存せずに戻る</a>
+    <textarea name="content" rows="20" cols="100" class="form-control focus-ring" id="section-content" style="--bs-focus-ring-color: rgba(232, 240, 216, 0.25);">{{ section.content }}</textarea>
+    <div id="show-buttons" class="text-center mt-2 d-none">
+        <a class="btn" id="show-buttons-button"></a>
+    </div>
+    <div id="submission" class="d-flex hideable">
+            <button type="submit" class="btn btn-dark my-3 me-2 p-2" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}">保存</button>
+            <button type="submit" class="btn btn-dark my-3 me-2 p-2" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">保存して戻る</button> 
+            <a class="btn btn-danger my-3 me-2 p-2" data-bs-toggle="modal" data-bs-target="#confirmModal">保存せずに戻る</a>
+            <div class="text-end ms-auto">
+                <span id="section-length" class="align-top">文字数: {{ section.content|length }}</span>
+            </div>
+    </div>
 </form>
-<p id="section-length">{{ section.content|length }}</p>
+<form class="hideable">
+<button id="open-search" type="button" class="btn btn-secondary mb-3"><i class="bi bi-search"></i> 検索/置換</button>
+<div id="search-replace-form" class="form-group row d-none">
+    <div class="col-md-6">
+        <input id="search-input" type="text" class="form-control mb-3" placeholder="検索して表示...">
+    </div>
+    <div class="col-md-6">
+        <input id="replace-input" type="text" class="form-control mb-3" placeholder="置換後のテキスト...">
+    </div>   
+</div>
+<a class="btn btn-dark mb-3 d-none" id="replace-button">置換</a>
+<a class="btn btn-secondary mb-3 d-none" id="close-search">閉じる</a>
+<p id="search-warning" class="d-none text-danger">検索文字列を入力してください。</p>
+</form>
+
+<!-- div for highlighting -->
+<div id="highlight" class="position-absolute overflow-y-scroll" style="pointer-events: none; border: 1px solid white;">
+    <div id="highlight-content" class="position-relative d-none"></div>
+</div>
 
 <!-- Confirm Modal -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
@@ -44,13 +71,121 @@
 <script>
 $(document).ready(function() {
     const config = JSON.parse(document.getElementById('configuration').textContent);
-    $('textarea').css('font-size', config.text_size + 'px');
-    $('textarea').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
-    $('textarea').css('line-height', (config.text_size * 1.5) + 'px');
-    $('textarea').css('width', (config.text_size * config.textarea_width + 45) + 'px');
-    $('#section-length').text('文字数: ' + $('textarea').val().length);
-    $('textarea').on('input', function() {
+    $('#section-content').css('font-size', config.text_size + 'px');
+    $('#section-content').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
+    $('#section-content').css('line-height', (config.text_size * 1.5) + 'px');
+    $('#edit-section-form').css('width', (config.text_size * config.textarea_width + 45) + 'px');
+    if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
+        $('#edit-section-form').css('width', '100%');
+    }
+    $('#section-length').text('文字数: ' + $('#section-content').val().length);
+    offset = $('#section-content').offset();
+    width = $('#section-content').outerWidth();
+    height = $('#section-content').outerHeight();
+    $('#highlight').css('left', offset.left);
+    $('#highlight').css('top', offset.top);
+    $('#highlight').css('width', width);
+    $('#highlight').css('height', height);
+    $('#highlight-content').css('padding', $('#section-content').css('padding'));
+    $('#highlight-content').css('font-size', $('#section-content').css('font-size'));
+    $('#highlight-content').css('line-height', $('#section-content').css('line-height'));
+    $('#section-content').on('input', function() {
         $('#section-length').text('文字数: ' + $(this).val().length);
+    });
+    $('#open-search').on('click', function() {
+        $('#search-replace-form').removeClass('d-none');
+        $('#search-input').focus();
+        $('#replace-button').removeClass('d-none');
+        $('#close-search').removeClass('d-none');
+        $(this).addClass('d-none');
+    });
+    $('#close-search').on('click', function() {
+        $('#search-replace-form').addClass('d-none');
+        $('#search-input').val('');
+        $('#replace-input').val('');
+        $('#search-warning').addClass('d-none');
+        $('#replace-button').addClass('d-none');
+        $('#close-search').addClass('d-none');
+        $('#open-search').removeClass('d-none');
+        $('#highlight-content').addClass('d-none');
+    });
+    $('#search-input').on('input click', function() {
+        const query = $('#search-input').val();
+        if (query) {
+            const content = $('#section-content').val();
+            const regex = new RegExp(query, 'gi');
+            let highlightedContent = content.replace(regex, (match) => `<span class="highlight">${match}</span>`);
+            highlightedContent = highlightedContent.replace(/\n/g, '<br>');
+            $('#highlight-content').html(highlightedContent);
+            $('.highlight').css('background-color', 'yellow');
+            $('#highlight-content').removeClass('d-none');
+            $('#highlight').scrollTop($('#section-content').scrollTop());
+            $('#highlight').scrollLeft($('#section-content').scrollLeft());
+        } else {
+            $('#highlight-content').addClass('d-none');
+        }
+    });
+        $('#replace-button').click(function() {
+            const query = $('#search-input').val();
+            const replacement = $('#replace-input').val();
+            if (query) {
+                const content = $('#section-content').val();
+                const regex = new RegExp(query, 'gi');
+                const newContent = content.replace(regex, replacement);
+                $('#section-content').val(newContent);
+                $('#section-length').text('文字数: ' + newContent.length);
+                $('#highlight-content').removeClass('d-none');
+                const new_regex = new RegExp(replacement, 'gi');
+                const highlightedContent = newContent.replace(new_regex, (match) => `<span class="highlight">${match}</span>`).replace(/\n/g, '<br>');
+                $('#highlight-content').html(highlightedContent);
+                $('.highlight').css('background-color', 'aqua');
+                $('#highlight').scrollTop($('#section-content').scrollTop());
+                $('#highlight').scrollLeft($('#section-content').scrollLeft());
+                $('#search-input').val('');
+                $('#replace-input').val('');
+                $('#search-warning').addClass('d-none');
+            }
+            else {
+                $('#search-warning').removeClass('d-none');
+                setTimeout(() => {
+                    $('#search-warning').addClass('d-none');
+                }, 2000);
+            }
+        });
+    $('#section-content').on('scroll', function() {
+        $('#highlight').scrollTop($('#section-content').scrollTop());
+        $('#highlight').scrollLeft($('#section-content').scrollLeft());
+    });
+    $('#section-content').on('click', function() {
+        $('#highlight-content').addClass('d-none');
+    });
+    $('#hide-buttons').click(function() {
+        $('.hideable').addClass('d-none');
+        $('#show-buttons').removeClass('d-none');
+        offset = $('#section-content').offset();
+        $('#highlight').css('left', offset.left);
+        $('#highlight').css('top', offset.top);
+    });
+    $('#show-buttons-button').click(function() {
+        $('.hideable').removeClass('d-none');
+        $('#show-buttons').addClass('d-none');
+        offset = $('#section-content').offset();
+        $('#highlight').css('left', offset.left);
+        $('#highlight').css('top', offset.top);
+    });
+    $(window).on('resize', function() {
+        if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
+            $('#edit-section-form').css('width', '100%');
+        } else {
+            $('#edit-section-form').css('width', (config.text_size * config.textarea_width + 45) + 'px');
+        }
+        offset = $('#section-content').offset();
+        width = $('#section-content').outerWidth();
+        height = $('#section-content').outerHeight();
+        $('#highlight').css('left', offset.left);
+        $('#highlight').css('top', offset.top);
+        $('#highlight').css('width', width);
+        $('#highlight').css('height', height);
     });
 });
 </script>

@@ -1,6 +1,6 @@
 {% extends "minamo/base.html" %}
 
-{% block title %}Book Detail - {{ book.title }}{% endblock %}
+{% block title %}{{ book.title }}{% endblock %}
 
 {% block content %}
 <ol class="breadcrumb">
@@ -8,6 +8,7 @@
   <li class="breadcrumb-item active">{{ book.title }}</li>
 </ol>
 <a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3">新しい章を追加</a>
+<a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
 <div class="container text-left">
     {% for chapter in chapters %}
     <div class="card border-0 mb-3">
@@ -34,7 +35,13 @@
                     <p class="mb-0 text-nowrap item-text">{{ chapter.updated_date|date:"Y-m-d" }}</p>
                 </div>
                 <div class="d-inline-block mb-2 text-start">
-                    <button class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ chapter.id }}">削除</button>
+                    <button class="btn btn-danger me-2 notarrow" data-bs-toggle="modal" data-bs-target="#deleteModal{{ chapter.id }}">削除</button>
+                    {% if not forloop.first %}
+                    <a class="btn btn-secondary me-2 d-none arrow" href="{% url 'minamo:swap_chapter' book.id chapter.id 1 %}"><i class="bi bi-caret-up-fill"></i></a>
+                    {% endif %}
+                    {% if not forloop.last %}
+                    <a class="btn btn-secondary me-2 d-none arrow" href="{% url 'minamo:swap_chapter' book.id chapter.id 3 %}"><i class="bi bi-caret-down-fill"></i></a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -42,7 +49,7 @@
     {% endfor %}
 </div>
 <a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark">本をエクスポート</a>
-<a href="{% url 'minamo:index' %}" class="btn btn-secondary">ダッシュボードに戻る</a>
+<a href="{% url 'minamo:index' %}" class="btn btn-secondary">ホームに戻る</a>
 
 <!-- Delete Confirmation Modal -->
 {% for chapter in chapters %}
@@ -90,13 +97,13 @@ $(document).ready(function() {
             $('#rename' + chapterId).removeClass('d-none');
         });
     });
-    $('#swap-toggle').change(function() {
-        if ($(this).is(':checked')) {
+    $('#swap-toggle').on('click', function() {
+        if ($(this).attr('aria-pressed') === 'true') {
             $('.arrow').removeClass('d-none');
-            $('.btn-danger').addClass('d-none');
+            $('.notarrow').addClass('d-none');
         } else {
             $('.arrow').addClass('d-none');
-            $('.btn-danger').removeClass('d-none');
+            $('.notarrow').removeClass('d-none');
         }
     });
 });

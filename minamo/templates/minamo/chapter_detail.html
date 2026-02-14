@@ -1,6 +1,6 @@
 {% extends 'minamo/base.html' %}
 
-{% block title %}Chapter {{ chapter.title }}{% endblock %}
+{% block title %}{{ chapter.book.title }} - {{ chapter.title }}{% endblock %}
 
 {% block content %}
 <ol class="breadcrumb">
@@ -9,6 +9,7 @@
   <li class="breadcrumb-item active">{{ chapter.title }}</li>
 </ol>
 <a href="{% url 'minamo:new_section' chapter.book.id chapter.id %}" class="btn btn-dark mb-3">新しい節を追加</a>
+<a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
 
 <div class="container text-left">
     {% for section in sections %}
@@ -40,8 +41,14 @@
         <div class="row">
             <div class="col-md-9"><p class="item-text ms-4 text-truncate">{{ section.content_head }}</p></div>
             <div class="col-md-3 mb-2 text-end">
-                <a href="{% url 'minamo:section_detail' chapter.book.id chapter.id section.id %}" class="btn btn-secondary me-2">表示</a>
-                <button class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#deleteModal{{ section.id }}">削除</button>
+                <a href="{% url 'minamo:section_detail' chapter.book.id chapter.id section.id %}" class="btn btn-secondary me-2 notarrow">表示</a>
+                <button class="btn btn-danger me-2 notarrow" data-bs-toggle="modal" data-bs-target="#deleteModal{{ section.id }}">削除</button>
+                {% if not forloop.first %}
+                <a class="btn btn-secondary me-2 arrow d-none" href="{% url 'minamo:swap_section' chapter.book.id chapter.id section.id 1 %}"><i class="bi bi-caret-up-fill"></i></a>
+                {% endif %}
+                {% if not forloop.last %}
+                <a class="btn btn-secondary me-2 arrow d-none" href="{% url 'minamo:swap_section' chapter.book.id chapter.id section.id 3 %}"><i class="bi bi-caret-down-fill"></i></a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -98,15 +105,13 @@ $(document).ready(function() {
             $('#rename' + sectionId).removeClass('d-none');
         });
     });
-    $('#swap-toggle').change(function() {
-        if ($(this).is(':checked')) {
+    $('#swap-toggle').on('click', function() {
+        if ($(this).attr('aria-pressed') === 'true') {
             $('.arrow').removeClass('d-none');
-            $('.btn-danger').addClass('d-none');
-            $('.btn-info').addClass('d-none');
+            $('.notarrow').addClass('d-none');
         } else {
             $('.arrow').addClass('d-none');
-            $('.btn-danger').removeClass('d-none');
-            $('.btn-info').removeClass('d-none');
+            $('.notarrow').removeClass('d-none');
         }
     });
 });

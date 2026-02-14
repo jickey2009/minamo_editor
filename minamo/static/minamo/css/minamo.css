@@ -1,5 +1,5 @@
 body {
-    font-family:"UD DigiKyokasho N-R","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP", sans-serif;
+    font-family:"UD デジタル 教科書体 N","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP", sans-serif;
     background-color: #e8f0d8;
 }
 
@@ -37,4 +37,38 @@ body {
 
 .trim {
     text-overflow: ellipsis
+}
+
+
+#section-content {
+    position: relative;
+    width: 100%;
+    z-index: 2;
+    background-color: transparent;
+    resize: none;
+}
+
+
+#highlight {
+    z-index: 1;
+    background-color: white;
+}
+
+#highlight-content {
+    color: transparent;
+}
+
+#submission {
+    width: 100%;
+}
+
+#show-buttons-button {
+    width: 30px;
+    height: 30px;
+    background-color: #DDE;
+    border-radius: 50%;
+}
+
+#section-content-show {
+    white-space: pre-wrap;
 }
