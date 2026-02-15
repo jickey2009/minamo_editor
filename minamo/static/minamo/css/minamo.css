@@ -1,3 +1,74 @@
 body {
-    font-family:"UD DigiKyokasho N-R","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP", sans-serif;
+    font-family:"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP", sans-serif;
+    background-color: #e8f0d8;
+}
+
+#main_container {
+    margin-top: 20px;
+}
+
+.item-title {
+    font-size: 1.5em;
+}
+
+.item-text {
+    font-size: 1em;
+}
+
+.item-subtext {
+    font-size: 0.7em;
+    color: #667;
+}
+
+.btn {
+    font-size: 0.9em;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+}
+.btn-dark {
+    background-color: #114;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #889;
+    color: #fff;
+}
+
+.trim {
+    text-overflow: ellipsis
+}
+
+
+#section-content {
+    position: relative;
+    width: 100%;
+    z-index: 2;
+    background-color: transparent;
+    resize: none;
+}
+
+
+#highlight {
+    z-index: 1;
+    background-color: white;
+}
+
+#highlight-content {
+    color: transparent;
+}
+
+#submission {
+    width: 100%;
+}
+
+#show-buttons-button {
+    width: 30px;
+    height: 30px;
+    background-color: #DDE;
+    border-radius: 50%;
+}
+
+#section-content-show {
+    white-space: pre-wrap;
 }

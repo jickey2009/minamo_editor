@@ -1,57 +1,58 @@
 {% extends "minamo/base.html" %}
 
-{% block title %}Book Detail - {{ book.title }}{% endblock %}
+{% block title %}{{ book.title }}{% endblock %}
 
 {% block content %}
 <ol class="breadcrumb">
   <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
   <li class="breadcrumb-item active">{{ book.title }}</li>
 </ol>
-<a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3">新しい章を追加</a>
-<p>{{ chapters.count }} 章</p>
-    <table class="table table-striped">
-    <tr>
-        <th>章</th>
-        <th>文字数</th>
-        <th>作成日時</th>
-        <th>更新日時</th>
-        <th><input type="checkbox" id="swap-toggle"><label for="swap-toggle">並べ替え</label></th>
-    </tr>
-
+<div class="d-flex flex-row">
+    <a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3 me-2">新しい章を追加</a>
+    <a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
+    <a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark mb-3 ms-auto">本をエクスポート</a>
+</div>
+<div class="container text-left">
     {% for chapter in chapters %}
-    <tr>
-        <td>
-            <a href="{% url 'minamo:chapter_detail' book.id chapter.id %}" id="name{{chapter.id}}">{{ chapter.title }}</a>
-            <i class="bi bi-pencil-square rename-icon" id="rename{{ chapter.id }}" style="cursor:pointer;"></i>
-            <form method="post" action="{% url 'minamo:rename_chapter' book.id chapter.id %}" class="d-inline" id="form{{ chapter.id }}">
-                {% csrf_token %}
-                <input type="text" name="title" value="{{ chapter.title }}" class="form-control form-control-sm d-none" id="input{{ chapter.id }}" style="width: auto; display: inline;">
-                <button type="submit" class="btn btn-primary btn-sm d-none" id="save{{ chapter.id }}">保存</button>
-                <button type="button" class="btn btn-secondary btn-sm d-none" id="cancel{{ chapter.id }}">戻る</button>
-            </form>
-        </td>
-        <td>{{ chapter.length }}文字</td>
-        <td>{{ chapter.created_date }}</td>
-        <td>{{ chapter.updated_date }}</td>
-        <td>
-            {% if not forloop.first %}
-            <a href="{% url 'minamo:swap_chapter' book.id chapter.id 1 %}" class="btn btn-dark btn-sm arrow d-none">↑</a>
-            {% endif %}
-            {% if not forloop.last %}
-            <a href="{% url 'minamo:swap_chapter' book.id chapter.id 3 %}" class="btn btn-dark btn-sm arrow d-none">↓</a>
-            {% endif %}
-            <a class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ chapter.id }}">削除</a>
-        </td>
-    </tr>
-    {% empty %} 
-    <tr>
-        <td colspan="5">まだ章がありません。新しい章を追加して始めましょう！</td>
-    </tr>
+    <div class="card border-0 mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <a href="{% url 'minamo:chapter_detail' book.id chapter.id %}" class="item-title ms-2" id="name{{ chapter.id }}">{{ chapter.title }}</a>
+                <form id="form{{ chapter.id }}" class="d-none" method="post" action="{% url 'minamo:rename_chapter' book.id chapter.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input id="input{{ chapter.id }}" type="text" name="title" value="{{ chapter.title }}" class="form-control d-inline-block w-auto">
+                    <button id="save{{ chapter.id }}" type="submit" class="btn btn-primary d-none">保存</button>
+                    <button id="cancel{{ chapter.id }}" type="button" class="btn btn-secondary d-none">キャンセル</button>
+                </form>
+                <button id="rename{{ chapter.id }}" class="btn"><i class="bi bi-pencil"></i></button>
+            </div>
+            
+            <div class="col-md-8 text-end">
+                <div class="col-md-2 d-inline-block me-3"><p class="align-middle text-nowrap item-text">{{chapter.length}}文字</p></div>
+                <div class="d-inline-block mx-3 text-start">
+                    <p class="mb-0 item-subtext">作成:</p>
+                    <p class="mb-0 text-nowrap item-text">{{ chapter.created_date|date:"Y-m-d" }}</p>
+                </div>
+                <div class="d-inline-block mx-3 text-start">
+                    <p class="mb-0 item-subtext">更新:</p>
+                    <p class="mb-0 text-nowrap item-text">{{ chapter.updated_date|date:"Y-m-d" }}</p>
+                </div>
+                <div class="d-inline-block mb-2 text-start">
+                    <button class="btn btn-danger me-2 notarrow" data-bs-toggle="modal" data-bs-target="#deleteModal{{ chapter.id }}">削除</button>
+                    {% if not forloop.first %}
+                    <a class="btn btn-secondary me-2 d-none arrow" href="{% url 'minamo:swap_chapter' book.id chapter.id 1 %}"><i class="bi bi-caret-up-fill"></i></a>
+                    {% endif %}
+                    {% if not forloop.last %}
+                    <a class="btn btn-secondary me-2 d-none arrow" href="{% url 'minamo:swap_chapter' book.id chapter.id 3 %}"><i class="bi bi-caret-down-fill"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
     {% endfor %}
+</div>
 
-</table>
-<a href="{% url 'minamo:export_book' book.id %}" class="btn btn-primary">本をエクスポート</a>
-<a href="{% url 'minamo:index' %}" class="btn btn-secondary">ダッシュボードに戻る</a>
+<a href="{% url 'minamo:index' %}" class="btn btn-secondary">ホームに戻る</a>
 
 <!-- Delete Confirmation Modal -->
 {% for chapter in chapters %}
@@ -59,7 +60,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="deleteModalLabel">章の削除確認</h5>
+        <h5 class="modal-title" id="deleteModalLabel{{ chapter.id }}">章の削除確認</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -99,13 +100,13 @@ $(document).ready(function() {
             $('#rename' + chapterId).removeClass('d-none');
         });
     });
-    $('#swap-toggle').change(function() {
-        if ($(this).is(':checked')) {
+    $('#swap-toggle').on('click', function() {
+        if ($(this).attr('aria-pressed') === 'true') {
             $('.arrow').removeClass('d-none');
-            $('.btn-danger').addClass('d-none');
+            $('.notarrow').addClass('d-none');
         } else {
             $('.arrow').addClass('d-none');
-            $('.btn-danger').removeClass('d-none');
+            $('.notarrow').removeClass('d-none');
         }
     });
 });
