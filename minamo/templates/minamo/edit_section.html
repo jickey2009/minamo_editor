@@ -17,9 +17,9 @@
         <a class="btn" id="show-buttons-button"></a>
     </div>
     <div id="submission" class="d-flex hideable">
-            <button type="submit" class="btn btn-dark my-3 me-2 p-2" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}">保存</button>
-            <button type="submit" class="btn btn-dark my-3 me-2 p-2" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">保存して戻る</button> 
-            <a class="btn btn-danger my-3 me-2 p-2" data-bs-toggle="modal" data-bs-target="#confirmModal">保存せずに戻る</a>
+            <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}">保存</button>
+            <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">保存して戻る</button> 
+            <a class="btn btn-danger my-3 me-2" data-bs-toggle="modal" data-bs-target="#confirmModal">保存せずに戻る</a>
             <div class="text-end ms-auto">
                 <span id="section-length" class="align-top">文字数: {{ section.content|length }}</span>
             </div>

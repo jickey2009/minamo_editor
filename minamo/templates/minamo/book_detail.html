@@ -7,8 +7,11 @@
   <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
   <li class="breadcrumb-item active">{{ book.title }}</li>
 </ol>
-<a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3">新しい章を追加</a>
-<a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
+<div class="d-flex flex-row">
+    <a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3 me-2">新しい章を追加</a>
+    <a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
+    <a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark mb-3 ms-auto">本をエクスポート</a>
+</div>
 <div class="container text-left">
     {% for chapter in chapters %}
     <div class="card border-0 mb-3">
@@ -48,7 +51,7 @@
     </div>
     {% endfor %}
 </div>
-<a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark">本をエクスポート</a>
+
 <a href="{% url 'minamo:index' %}" class="btn btn-secondary">ホームに戻る</a>
 
 <!-- Delete Confirmation Modal -->
