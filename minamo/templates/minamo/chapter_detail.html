@@ -9,7 +9,7 @@
   <li class="breadcrumb-item active">{{ chapter.title }}</li>
 </ol>
 <a href="{% url 'minamo:new_section' chapter.book.id chapter.id %}" class="btn btn-dark mb-3">新しい節を追加</a>
-<a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
+<a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle" {% if request.GET.swap == 'True' %}aria-pressed="true"{% endif %}>並べ替え</a>
 
 <div class="container text-left">
     {% for section in sections %}
@@ -17,11 +17,11 @@
         <div class="row">
             <div class="col-md-6">
                 <a href="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}" class="item-title ms-2" id="name{{ section.id }}">{{ section.title }}</a>
-                <form id="form{{ section.id }}" class="d-none" method="post" action="{% url 'minamo:rename_section' chapter.book.id chapter.id section.id %}" style="display: inline;">
+                <form id="form{{ section.id }}" method="post" action="{% url 'minamo:rename_section' chapter.book.id chapter.id section.id %}" style="display: inline;">
                     {% csrf_token %}
-                    <input id="input{{ section.id }}" type="text" name="title" value="{{ section.title }}" class="form-control d-inline-block w-auto">
-                    <button id="save{{ section.id }}" type="submit" class="btn btn-primary d-none">保存</button>
-                    <button id="cancel{{ section.id }}" type="button" class="btn btn-secondary d-none">キャンセル</button>
+                    <input id="input{{ section.id }}" type="text" name="title" value="{{ section.title }}" class="form-control d-inline-block w-auto d-none">
+                    <button id="save{{ section.id }}" type="submit" class="btn btn-dark d-none">保存</button>
+                    <button id="cancel{{ section.id }}" type="button" class="btn btn-secondary d-none">戻る</button>
                 </form>
                 <button id="rename{{ section.id }}" class="btn"><i class="bi bi-pencil"></i></button>
             </div>
@@ -105,6 +105,14 @@ $(document).ready(function() {
             $('#rename' + sectionId).removeClass('d-none');
         });
     });
+    if ($('#swap-toggle').attr('aria-pressed') === 'true') {
+        $('#swap-toggle').addClass('active');
+        $('.arrow').removeClass('d-none');
+        $('.notarrow').addClass('d-none');
+    } else {
+        $('.arrow').addClass('d-none');
+        $('.notarrow').removeClass('d-none');
+    }   
     $('#swap-toggle').on('click', function() {
         if ($(this).attr('aria-pressed') === 'true') {
             $('.arrow').removeClass('d-none');

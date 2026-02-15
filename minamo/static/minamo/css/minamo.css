@@ -69,6 +69,13 @@ body {
     border-radius: 50%;
 }
 
+#alert-saved {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 3;
+}
+
 #section-content-show {
     white-space: pre-wrap;
 }

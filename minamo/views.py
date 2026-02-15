@@ -23,6 +23,8 @@ class SignupView(CreateView):
         authenticated_user = authenticate(username=user_id, password=password)
         if authenticated_user is not None:
             login(self.request, authenticated_user)
+            config = Configuration(user=authenticated_user)
+            config.save()  # Create default configuration for the new user
         return response
     
 class LoginView(BaseLoginView):
@@ -138,7 +140,9 @@ def swap_chapter(request, book_id, chapter_id, direction):
     chapter.save()
     target_chapter.save()
 
-    return redirect('minamo:book_detail', book_id=book.id)
+    url = reverse_lazy('minamo:book_detail', kwargs={'book_id': book.id})
+
+    return redirect(url + '?swap=True')
 
 @login_required
 def delete_chapter(request, book_id, chapter_id):
@@ -189,7 +193,8 @@ def edit_section(request, book_id, chapter_id, section_id, return_url =None):
         if return_url == 'chapter':
             return redirect('minamo:chapter_detail', book_id=book.id, chapter_id=chapter.id)
         else:
-            return redirect('minamo:edit_section', book_id=book.id, chapter_id=chapter.id, section_id=section.id)
+            url = reverse_lazy('minamo:edit_section', kwargs={'book_id': book.id, 'chapter_id': chapter.id, 'section_id': section.id})
+            return redirect(url + '?alert=True')
     context = {'book': book, 'chapter': chapter, 'section': section}
     context['configuration_json'] = None
     try:
@@ -234,7 +239,8 @@ def swap_section(request, book_id, chapter_id, section_id, direction):
     section.order, target_section.order = target_section.order, section.order
     section.save()
     target_section.save()
-    return redirect('minamo:chapter_detail', book_id=book.id, chapter_id=chapter.id)
+    url = reverse_lazy('minamo:chapter_detail', kwargs={'book_id': book.id, 'chapter_id': chapter.id})
+    return redirect(url + '?swap=True')
 
 @login_required
 def delete_section(request, book_id, chapter_id, section_id):

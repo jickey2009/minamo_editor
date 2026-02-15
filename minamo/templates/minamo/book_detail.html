@@ -9,25 +9,25 @@
 </ol>
 <div class="d-flex flex-row">
     <a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3 me-2">新しい章を追加</a>
-    <a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle">並べ替え</a>
+    <a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle" {% if request.GET.swap == 'True' %}aria-pressed="true"{% endif %}>並べ替え</a>
     <a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark mb-3 ms-auto">本をエクスポート</a>
 </div>
 <div class="container text-left">
     {% for chapter in chapters %}
     <div class="card border-0 mb-3">
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <a href="{% url 'minamo:chapter_detail' book.id chapter.id %}" class="item-title ms-2" id="name{{ chapter.id }}">{{ chapter.title }}</a>
-                <form id="form{{ chapter.id }}" class="d-none" method="post" action="{% url 'minamo:rename_chapter' book.id chapter.id %}" style="display: inline;">
+                <form id="form{{ chapter.id }}" method="post" action="{% url 'minamo:rename_chapter' book.id chapter.id %}" style="display: inline;">
                     {% csrf_token %}
-                    <input id="input{{ chapter.id }}" type="text" name="title" value="{{ chapter.title }}" class="form-control d-inline-block w-auto">
-                    <button id="save{{ chapter.id }}" type="submit" class="btn btn-primary d-none">保存</button>
-                    <button id="cancel{{ chapter.id }}" type="button" class="btn btn-secondary d-none">キャンセル</button>
+                    <input id="input{{ chapter.id }}" type="text" name="title" value="{{ chapter.title }}" class="form-control d-inline-block w-auto d-none">
+                    <button id="save{{ chapter.id }}" type="submit" class="btn btn-dark d-none">保存</button>
+                    <button id="cancel{{ chapter.id }}" type="button" class="btn btn-secondary d-none">戻る</button>
                 </form>
                 <button id="rename{{ chapter.id }}" class="btn"><i class="bi bi-pencil"></i></button>
             </div>
             
-            <div class="col-md-8 text-end">
+            <div class="col-md-6 text-end">
                 <div class="col-md-2 d-inline-block me-3"><p class="align-middle text-nowrap item-text">{{chapter.length}}文字</p></div>
                 <div class="d-inline-block mx-3 text-start">
                     <p class="mb-0 item-subtext">作成:</p>
@@ -100,6 +100,14 @@ $(document).ready(function() {
             $('#rename' + chapterId).removeClass('d-none');
         });
     });
+    if ($('#swap-toggle').attr('aria-pressed') === 'true') {
+        $('#swap-toggle').addClass('active');
+        $('.arrow').removeClass('d-none');
+        $('.notarrow').addClass('d-none');
+    } else {
+        $('.arrow').addClass('d-none');
+        $('.notarrow').removeClass('d-none');
+    }
     $('#swap-toggle').on('click', function() {
         if ($(this).attr('aria-pressed') === 'true') {
             $('.arrow').removeClass('d-none');
