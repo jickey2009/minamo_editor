@@ -10,6 +10,14 @@
   <li class="breadcrumb-item active">{{ section.title }}</li>
 </ol>
 <button class="btn btn-secondary mb-3 hideable" id="hide-buttons">ボタンを非表示</button>
+<div id="alert-box" class="position-relative">
+    {% if request.GET.alert == 'True' %}
+    <div class="alert alert-success alert-dismissible fade show" id="alert-saved" role="alert">
+      保存しました。
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+</div>
 <form method="post" id="edit-section-form">
     {% csrf_token %}
     <textarea name="content" rows="20" cols="100" class="form-control focus-ring" id="section-content" style="--bs-focus-ring-color: rgba(232, 240, 216, 0.25);">{{ section.content }}</textarea>
@@ -17,8 +25,8 @@
         <a class="btn" id="show-buttons-button"></a>
     </div>
     <div id="submission" class="d-flex hideable">
-            <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}">保存</button>
-            <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">保存して戻る</button> 
+            <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section' chapter.book.id chapter.id section.id %}"><i class="bi bi-save"></i> 保存</button>
+            <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">戻る</button> 
             <a class="btn btn-danger my-3 me-2" data-bs-toggle="modal" data-bs-target="#confirmModal">保存せずに戻る</a>
             <div class="text-end ms-auto">
                 <span id="section-length" class="align-top">文字数: {{ section.content|length }}</span>
@@ -44,6 +52,8 @@
 <div id="highlight" class="position-absolute overflow-y-scroll" style="pointer-events: none; border: 1px solid white;">
     <div id="highlight-content" class="position-relative d-none"></div>
 </div>
+
+
 
 <!-- Confirm Modal -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
@@ -174,19 +184,13 @@ $(document).ready(function() {
         $('#highlight').css('top', offset.top);
     });
     $(window).on('resize', function() {
-        if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
-            $('#edit-section-form').css('width', '100%');
-        } else {
-            $('#edit-section-form').css('width', (config.text_size * config.textarea_width + 45) + 'px');
-        }
         offset = $('#section-content').offset();
-        width = $('#section-content').outerWidth();
-        height = $('#section-content').outerHeight();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
-        $('#highlight').css('width', width);
-        $('#highlight').css('height', height);
     });
+    setTimeout(() => {
+        $('#alert-saved').alert('close');
+    }, 1000);
 });
 </script>
 {% endblock %}
