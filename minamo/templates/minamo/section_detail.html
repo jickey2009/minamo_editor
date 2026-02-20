@@ -6,5 +6,5 @@
 <h1>Section: {{ section.title }}</h1>
 <p id="section-content-show">{{ section.content }}</p>
 <a href="{% url 'minamo:edit_section' section.chapter.book.id section.chapter.id section.id %}" class="btn btn-warning btn-sm">Edit Section</a>
-<a href="{% url 'minamo:chapter_detail' section.chapter.book.id section.chapter.id %}" class="btn btn-secondary btn-sm">Back to Chapter</a>
+<a href="{% url 'minamo:book_detail' section.chapter.book.id %}?show_chapter={{ section.chapter.id }}" class="btn btn-secondary btn-sm">Back to book</a>
 {% endblock %}  

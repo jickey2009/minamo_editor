@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.contrib.auth import login, authenticate
+from django.db.models import Prefetch
 import urllib.parse
 
 # Create your views here.
@@ -60,9 +61,13 @@ def new_book(request):
 @login_required
 def book_detail(request, book_id):
     book = request.user.book_set.get(id=book_id)
-    chapters = book.chapter_set.order_by('order')
-    context = {'book': book, 'chapters': chapters}
+    chapters = book.chapter_set.order_by('order').prefetch_related(
+        Prefetch('section_set', queryset=Section.objects.order_by('order'), to_attr='ordered_sections')
+    )
+    sections = Section.objects.filter(chapter__book=book).order_by('order')
+    context = {'book': book, 'chapters': chapters, 'sections': sections}
     context['chapters_json'] = [{'id': chapter.id} for chapter in chapters]
+    context['sections_json'] = [{'id': section.id} for section in sections]
     return render(request, 'minamo/book_detail.html', context)
 
 @login_required
@@ -162,7 +167,8 @@ def new_section(request, book_id, chapter_id):
     new_section.save()
     chapter.next_section_order += 1
     chapter.save()
-    return redirect('minamo:chapter_detail', book_id=book.id, chapter_id=chapter.id)
+    url = reverse_lazy('minamo:book_detail', kwargs={'book_id': book.id})
+    return redirect(url + '?show_chapter=' + str(chapter.id))
 
 
 @login_required
@@ -191,7 +197,8 @@ def edit_section(request, book_id, chapter_id, section_id, return_url =None):
         book.length += length_diff
         book.save()
         if return_url == 'chapter':
-            return redirect('minamo:chapter_detail', book_id=book.id, chapter_id=chapter.id)
+            url = reverse_lazy('minamo:book_detail', kwargs={'book_id': book.id})
+            return redirect(url + '?show_chapter=' + str(chapter.id))
         else:
             url = reverse_lazy('minamo:edit_section', kwargs={'book_id': book.id, 'chapter_id': chapter.id, 'section_id': section.id})
             return redirect(url + '?alert=True')
@@ -219,7 +226,8 @@ def rename_section(request, book_id, chapter_id, section_id,):
         if new_title:
             section.title = new_title
             section.save()
-    return redirect('minamo:chapter_detail', book_id=book.id, chapter_id=chapter.id)
+    url = reverse_lazy('minamo:book_detail', kwargs={'book_id': book.id})
+    return redirect(url + '?show_chapter=' + str(chapter.id))
     
 @login_required
 def swap_section(request, book_id, chapter_id, section_id, direction):
@@ -239,8 +247,8 @@ def swap_section(request, book_id, chapter_id, section_id, direction):
     section.order, target_section.order = target_section.order, section.order
     section.save()
     target_section.save()
-    url = reverse_lazy('minamo:chapter_detail', kwargs={'book_id': book.id, 'chapter_id': chapter.id})
-    return redirect(url + '?swap=True')
+    url = reverse_lazy('minamo:book_detail', kwargs={'book_id': book.id})
+    return redirect(url + '?swap=True&show_chapter=' + str(chapter.id))
 
 @login_required
 def delete_section(request, book_id, chapter_id, section_id):
@@ -248,7 +256,8 @@ def delete_section(request, book_id, chapter_id, section_id):
     chapter = book.chapter_set.get(id=chapter_id)
     section = chapter.section_set.get(id=section_id)
     section.delete()
-    return redirect('minamo:chapter_detail', book_id=book.id, chapter_id=chapter.id)
+    url = reverse_lazy('minamo:book_detail', kwargs={'book_id': book.id})
+    return redirect(url + '?show_chapter=' + str(chapter.id))
 
 @login_required
 def export_book(request, book_id):

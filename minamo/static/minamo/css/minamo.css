@@ -11,6 +11,10 @@ body {
     font-size: 1.5em;
 }
 
+.item-subtitle {
+    font-size: 1.2em;
+}
+
 .item-text {
     font-size: 1em;
 }
@@ -35,8 +39,15 @@ body {
     color: #fff;
 }
 
+.card.sections {
+    --bs-card-bg: #d8d8e0;
+    background-color: #d8d8e0 !important;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
 .trim {
-    text-overflow: ellipsis
+    text-overflow: ellipsis;
 }
 
 
