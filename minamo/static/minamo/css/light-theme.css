@@ -1,0 +1,35 @@
+body {
+    background-color: #e8f0d8;
+}
+
+.item-subtext {
+    color: #667;
+}
+
+.btn-dark {
+    background-color: #114;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #889;
+    color: #fff;
+}
+
+.card.sections {
+    --bs-card-bg: #d8d8e0;
+    background-color: #d8d8e0 !important;
+}
+
+#highlight {
+    background-color: white;
+}
+
+#show-buttons-button {
+    background-color: #DDE;
+}
+
+#section-content {
+    --bs-focus-ring-color: #e8f0d8;
+    scrollbar-color: #DDE white;
+}

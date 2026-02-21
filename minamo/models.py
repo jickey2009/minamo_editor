@@ -47,9 +47,11 @@ class Section(models.Model):
 class Configuration(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     dark_mode = models.BooleanField(default=False)
+    UD_Digi = models.BooleanField(default=False)
     text_size = models.IntegerField(default=14)
     textarea_height = models.IntegerField(default=20)
     textarea_width = models.IntegerField(default=40)
+    text_vertical_align = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Configuration for {self.user.username}"

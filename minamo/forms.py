@@ -30,10 +30,12 @@ class SectionForm(ModelForm):
 class ConfigurationForm(ModelForm):
     class Meta:
         model = Configuration
-        fields = ('dark_mode','text_size','textarea_height','textarea_width')
+        fields = ('dark_mode','UD_Digi','text_size','textarea_height','textarea_width','text_vertical_align')
         labels = {
             'dark_mode': 'ダークモード',
+            'UD_Digi': 'UD書体を使用する(Windowsのみ)',
             'text_size': '文字サイズ',
             'textarea_height': 'テキストエリアの高さ（文字数）',
             'textarea_width': 'テキストエリアの幅（文字数）',
+            'text_vertical_align': '縦書き',
         }

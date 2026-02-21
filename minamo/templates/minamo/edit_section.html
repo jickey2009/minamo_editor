@@ -20,7 +20,7 @@
 </div>
 <form method="post" id="edit-section-form">
     {% csrf_token %}
-    <textarea name="content" rows="20" cols="100" class="form-control focus-ring" id="section-content" style="--bs-focus-ring-color: rgba(232, 240, 216, 0.25);">{{ section.content }}</textarea>
+    <textarea name="content" rows="20" cols="100" class="form-control focus-ring" id="section-content">{{ section.content }}</textarea>
     <div id="show-buttons" class="text-center mt-2 d-none">
         <a class="btn" id="show-buttons-button"></a>
     </div>
@@ -29,7 +29,7 @@
             <button type="submit" class="btn btn-dark my-3 me-2" formaction="{% url 'minamo:edit_section_return' chapter.book.id chapter.id section.id 'chapter' %}">戻る</button> 
             <a class="btn btn-danger my-3 me-2" data-bs-toggle="modal" data-bs-target="#confirmModal">保存せずに戻る</a>
             <div class="text-end ms-auto">
-                <span id="section-length" class="align-top">文字数: {{ section.content|length }}</span>
+                <span id="section-length" class="item-text align-top">文字数: {{ section.content|length }}</span>
             </div>
     </div>
 </form>
@@ -49,11 +49,11 @@
 </form>
 
 <!-- div for highlighting -->
-<div id="highlight" class="position-absolute overflow-y-scroll" style="pointer-events: none; border: 1px solid white;">
+<div id="highlight" class="position-absolute {% if user.configuration.text_vertical_align %}overflow-x-scroll{% else %}overflow-y-scroll{% endif %}" style="pointer-events: none;">
     <div id="highlight-content" class="position-relative d-none"></div>
 </div>
 
-
+<p id="debug"></p>
 
 <!-- Confirm Modal -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
@@ -81,10 +81,64 @@
 <script>
 $(document).ready(function() {
     const config = JSON.parse(document.getElementById('configuration').textContent);
+    const cursorStorageKey = 'minamo:section-cursor:{{ section.id }}';
+    const syncHighlightLayout = () => {
+        const sectionContent = $('#section-content')[0];
+        $('#highlight').css('overflow', 'auto');
+        $('#highlight-content').css('width', sectionContent.scrollWidth + 'px');
+        $('#highlight-content').css('height', sectionContent.scrollHeight + 'px');
+    };
+    const syncHighlightScroll = () => {
+        const sectionContent = $('#section-content')[0];
+        const highlight = $('#highlight')[0];
+        highlight.scrollTop = sectionContent.scrollTop;
+        highlight.scrollLeft = sectionContent.scrollLeft;
+    };
+    const saveCursorPosition = () => {
+        const sectionContent = $('#section-content')[0];
+        sessionStorage.setItem(cursorStorageKey, String(sectionContent.selectionStart));
+    };
+    const restoreCursorPosition = () => {
+        const sectionContent = $('#section-content')[0];
+        const savedPosition = sessionStorage.getItem(cursorStorageKey);
+        if (savedPosition === null) {
+            return;
+        }
+        const parsedPosition = Number(savedPosition);
+        if (Number.isNaN(parsedPosition)) {
+            return;
+        }
+        const cursorPosition = Math.max(0, Math.min(parsedPosition, sectionContent.value.length));
+        sectionContent.focus();
+        sectionContent.setSelectionRange(cursorPosition, cursorPosition);
+    };
+    const scrollToCursor = () => {
+        const sectionContent = $('#section-content')[0];
+        const fulltext = sectionContent.value;
+        const cursorPosition = sectionContent.selectionStart;
+        const beforeCursor = sectionContent.value.slice(0, cursorPosition);
+        sectionContent.value = beforeCursor;
+        scrollPosX = sectionContent.scrollWidth;
+        scrollPosY = sectionContent.scrollHeight;
+        sectionContent.value = fulltext;
+        sectionContent.scrollLeft = -scrollPosX + (sectionContent.clientWidth / 2);
+        sectionContent.scrollTop = scrollPosY - (sectionContent.clientHeight / 2);
+    };
+        
+    if(config.text_vertical_align) {
+        $('#section-content').css('writing-mode', 'vertical-rl');
+        $('#section-content').css('text-orientation', 'mixed');
+        $('#section-content').css('height', (config.text_size * config.textarea_height + 30) + 'px');
+        $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 15) + 'px');
+    } else {
+        $('#section-content').css('writing-mode', 'horizontal-tb');
+        $('#section-content').css('text-orientation', 'mixed');
+        $('#section-content').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
+        $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 45) + 'px');
+    }
     $('#section-content').css('font-size', config.text_size + 'px');
-    $('#section-content').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
     $('#section-content').css('line-height', (config.text_size * 1.5) + 'px');
-    $('#edit-section-form').css('width', (config.text_size * config.textarea_width + 45) + 'px');
+    
     if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
         $('#edit-section-form').css('width', '100%');
     }
@@ -96,11 +150,28 @@ $(document).ready(function() {
     $('#highlight').css('top', offset.top);
     $('#highlight').css('width', width);
     $('#highlight').css('height', height);
+    syncHighlightLayout();
+    syncHighlightScroll();
+    if(config.text_vertical_align) {
+        $('#highlight').css('writing-mode', 'vertical-rl');
+        $('#highlight').css('text-orientation', 'mixed');
+    } else {
+        $('#highlight').css('writing-mode', 'horizontal-tb');
+        $('#highlight').css('text-orientation', 'mixed');
+    }
     $('#highlight-content').css('padding', $('#section-content').css('padding'));
     $('#highlight-content').css('font-size', $('#section-content').css('font-size'));
     $('#highlight-content').css('line-height', $('#section-content').css('line-height'));
+    $('#highlight-content').css('white-space', 'pre-wrap');
+    $('#highlight-content').css('overflow-wrap', 'break-word');
+    restoreCursorPosition();
+    scrollToCursor();
+    syncHighlightScroll();
     $('#section-content').on('input', function() {
         $('#section-length').text('文字数: ' + $(this).val().length);
+    });
+    $(window).on('beforeunload', function() {
+        saveCursorPosition();
     });
     $('#open-search').on('click', function() {
         $('#search-replace-form').removeClass('d-none');
@@ -127,10 +198,11 @@ $(document).ready(function() {
             let highlightedContent = content.replace(regex, (match) => `<span class="highlight">${match}</span>`);
             highlightedContent = highlightedContent.replace(/\n/g, '<br>');
             $('#highlight-content').html(highlightedContent);
-            $('.highlight').css('background-color', 'yellow');
+            $('.highlight').css('background-color', '#f80');
             $('#highlight-content').removeClass('d-none');
-            $('#highlight').scrollTop($('#section-content').scrollTop());
-            $('#highlight').scrollLeft($('#section-content').scrollLeft());
+            syncHighlightLayout();
+            syncHighlightScroll();
+            requestAnimationFrame(syncHighlightScroll);
         } else {
             $('#highlight-content').addClass('d-none');
         }
@@ -144,13 +216,15 @@ $(document).ready(function() {
                 const newContent = content.replace(regex, replacement);
                 $('#section-content').val(newContent);
                 $('#section-length').text('文字数: ' + newContent.length);
+                saveCursorPosition();
                 $('#highlight-content').removeClass('d-none');
                 const new_regex = new RegExp(replacement, 'gi');
                 const highlightedContent = newContent.replace(new_regex, (match) => `<span class="highlight">${match}</span>`).replace(/\n/g, '<br>');
                 $('#highlight-content').html(highlightedContent);
-                $('.highlight').css('background-color', 'aqua');
-                $('#highlight').scrollTop($('#section-content').scrollTop());
-                $('#highlight').scrollLeft($('#section-content').scrollLeft());
+                $('.highlight').css('background-color', '#08f');
+                syncHighlightLayout();
+                syncHighlightScroll();
+                requestAnimationFrame(syncHighlightScroll);
                 $('#search-input').val('');
                 $('#replace-input').val('');
                 $('#search-warning').addClass('d-none');
@@ -163,8 +237,7 @@ $(document).ready(function() {
             }
         });
     $('#section-content').on('scroll', function() {
-        $('#highlight').scrollTop($('#section-content').scrollTop());
-        $('#highlight').scrollLeft($('#section-content').scrollLeft());
+        syncHighlightScroll();
     });
     $('#section-content').on('click', function() {
         $('#highlight-content').addClass('d-none');

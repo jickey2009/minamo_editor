@@ -206,10 +206,10 @@ def edit_section(request, book_id, chapter_id, section_id, return_url =None):
     context['configuration_json'] = None
     try:
         context['configuration_json'] = {
-            'dark_mode': request.user.configuration.dark_mode,
             'text_size': request.user.configuration.text_size,
             'textarea_height': request.user.configuration.textarea_height,
             'textarea_width': request.user.configuration.textarea_width,
+            'text_vertical_align': request.user.configuration.text_vertical_align,
         }
     except Configuration.DoesNotExist:
         pass

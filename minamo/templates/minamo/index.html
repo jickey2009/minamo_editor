@@ -67,7 +67,7 @@
         {% endif %}
     </div>
 </div>
-<a href="{% url 'minamo:settings' %}" class="btn btn-secondary mt-3">ユーザー設定</a>
+<a href="{% url 'minamo:settings' %}" class="btn btn-secondary mt-3 me-2">ユーザー設定</a>
 <form action="{% url 'minamo:logout' %}" method="post" style="display: inline;">
     {% csrf_token %}
     <button type="submit" class="btn btn-secondary mt-3">ログアウト</button>

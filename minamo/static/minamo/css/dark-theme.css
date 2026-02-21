@@ -1,0 +1,74 @@
+body {
+    background-color: #181038;
+    color: #e8f0d8;
+}
+
+.breadcrumb {
+    color: white !important;
+}
+
+.breadcrumb-item,
+.breadcrumb-item.active,
+.breadcrumb-item + .breadcrumb-item::before {
+    color: white !important;
+}
+
+.breadcrumb-item a,
+.breadcrumb-item a:visited,
+.breadcrumb-item a:hover,
+.breadcrumb-item a:focus {
+    color: #e8f0d8 !important;
+}
+
+.item-title {
+    color: #e8f0d8;
+}
+
+.item-subtitle {
+    color: #e8f0d8;
+}
+
+.item-text {
+    color: white;
+}
+
+.item-text.text-truncate {
+    color: #c0c0d0;
+}
+
+.item-subtext {
+    color: #A0A0B0;
+}
+
+.btn-dark {
+    background-color: #66a;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #889;
+    color: white;
+}
+
+.card{
+    background-color: black;
+}
+
+.card.sections {
+    --bs-card-bg: #303030;
+    background-color: #303030 !important;
+}
+
+#highlight {
+    background-color: black;
+}
+
+#section-content {
+    color: #e8f0d8;
+    --bs-focus-ring-color: #181038;
+    scrollbar-color: #303040 black;
+}
+
+#show-buttons-button {
+    background-color: #303040;
+}
