@@ -12,10 +12,13 @@
 {% else %}
 <link rel="stylesheet" href="{% static 'minamo/css/light-theme.css' %}">
 {% endif %}
+{% if user.is_authenticated and user.configuration.UD_Digi %}
+<link rel="stylesheet" href="{% static 'minamo/css/UDfont.css' %}">
+{% endif %}
 {% block extra_css %}{% endblock %}
 <title>{% block title %}Minamo Editor - v1.0.1{% endblock %}</title>
 </head>
-<body>
+<body{% if user.is_authenticated and user.configuration.UD_Digi %} class="ud-font"{% endif %}>
   <div class="container" id="main_container">
     {% block content %}
       {{ content }}
