@@ -7,11 +7,22 @@
   <li class="breadcrumb-item"><a href="{% url 'minamo:index' %}">ホーム</a></li>
   <li class="breadcrumb-item active">{{ book.title }}</li>
 </ol>
-<div class="d-flex flex-row">
-    <a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3 me-2">新しい章を追加</a>
-    <a class="btn btn-secondary mb-3" data-bs-toggle="button" id="swap-toggle" {% if request.GET.swap == 'True' %}aria-pressed="true"{% endif %}>並べ替え</a>
-    <a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark mb-3 ms-auto">本をエクスポート</a>
+<div class="row mb-3">
+    <div class="col-lg-9 d-md-flex">
+        <a href="{%url 'minamo:new_chapter' book.id %}" class="btn btn-dark mb-3 me-2">新しい章を追加</a>
+        <a class="btn btn-secondary mb-3 me-2" data-bs-toggle="button" id="swap-toggle" {% if request.GET.swap == 'True' %}aria-pressed="true"{% endif %}>並べ替え</a>
+        <form method="get" class="mb-3" action="{% url 'minamo:cross_search' book.id %}">
+            <div class="input-group">
+                <input type="text" name="search" value="" class="form-control" placeholder="まとめて検索">
+                <button type="submit" class="btn btn-secondary">検索</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-lg-3 d-md-flex justify-content-end">
+        <a href="{% url 'minamo:export_book' book.id %}" class="btn btn-dark mb-3 ms-auto">本をエクスポート</a>
+    </div>
 </div>
+
 <div class="container text-left">
     {% for chapter in chapters %}
     <div class="card border-0 mb-3">

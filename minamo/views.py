@@ -186,7 +186,7 @@ def edit_section(request, book_id, chapter_id, section_id, return_url =None):
     section = chapter.section_set.get(id=section_id)
     length = section.length
     if request.method == 'POST' :
-        section.content = request.POST.get('content', '')
+        section.content = request.POST.get('content', '').replace('\r\n', '\n')
         section.length = len(section.content)
         if section.content:
             section.content_head = section.content[:75]
@@ -202,7 +202,15 @@ def edit_section(request, book_id, chapter_id, section_id, return_url =None):
         else:
             url = reverse_lazy('minamo:edit_section', kwargs={'book_id': book.id, 'chapter_id': chapter.id, 'section_id': section.id})
             return redirect(url + '?alert=True')
+    
     context = {'book': book, 'chapter': chapter, 'section': section}
+    index = request.GET.get('index', '')
+    querylen = request.GET.get('querylen', '')
+    if index.isdigit() and querylen.isdigit():
+        context['set_selection_json'] = {
+            'start': int(index),
+            'end': int(index) + int(querylen),
+        }
     context['configuration_json'] = None
     try:
         context['configuration_json'] = {
@@ -274,6 +282,35 @@ def export_book(request, book_id):
     response = HttpResponse(content, content_type='text/plain; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+@login_required
+def cross_search(request, book_id):
+    query = request.GET.get('search', '').strip()
+    if query == '':
+        return redirect('minamo:book_detail', book_id=book_id)
+    book = request.user.book_set.get(id=book_id)
+    chapters = book.chapter_set.order_by('order')
+    sections = Section.objects.filter(chapter__book=book, content__icontains=query).order_by('chapter__order', 'order')
+    matches = []
+    for section in sections:
+        content = section.content
+        start = 0
+        while True:
+            index = content.find(query, start)
+            if index == -1:
+                break
+            matches.append({
+                'chapter_id': section.chapter.id,
+                'chapter_title': section.chapter.title,
+                'section_id': section.id,
+                'section_title': section.title,
+                'index': index,
+                'preview': content[max(0, index-15):index+len(query)+45].replace('\n', ' '),
+            })
+            start = index + len(query)
+    matches_page = matches[:100]  # 上位100件のみ表示
+    context = {'book': book, 'chapters': chapters, 'matches': matches_page, 'query': query}
+    return render(request, 'minamo/cross_search.html', context)
 
 @login_required
 def settings(request):

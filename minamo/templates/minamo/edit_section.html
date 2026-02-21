@@ -68,7 +68,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-        <a href="{% url 'minamo:chapter_detail' chapter.book.id chapter.id %}" class="btn btn-danger">保存せずに戻る</a>
+        <a href="{% url 'minamo:book_detail' chapter.book.id %}" class="btn btn-danger">保存せずに戻る</a>
       </div>
     </div>
   </div>
@@ -78,9 +78,13 @@
 
 {% block extra_js %}
 {{ configuration_json|json_script:"configuration" }}
+{% if set_selection_json %}
+{{ set_selection_json|json_script:"set_selection" }}
+{% endif %}
 <script>
 $(document).ready(function() {
     const config = JSON.parse(document.getElementById('configuration').textContent);
+
     const cursorStorageKey = 'minamo:section-cursor:{{ section.id }}';
     const syncHighlightLayout = () => {
         const sectionContent = $('#section-content')[0];
@@ -96,11 +100,11 @@ $(document).ready(function() {
     };
     const saveCursorPosition = () => {
         const sectionContent = $('#section-content')[0];
-        sessionStorage.setItem(cursorStorageKey, String(sectionContent.selectionStart));
+        localStorage.setItem(cursorStorageKey, String(sectionContent.selectionStart));
     };
     const restoreCursorPosition = () => {
         const sectionContent = $('#section-content')[0];
-        const savedPosition = sessionStorage.getItem(cursorStorageKey);
+        const savedPosition = localStorage.getItem(cursorStorageKey);
         if (savedPosition === null) {
             return;
         }
@@ -112,10 +116,26 @@ $(document).ready(function() {
         sectionContent.focus();
         sectionContent.setSelectionRange(cursorPosition, cursorPosition);
     };
+    const normalizedIndexToTextareaIndex = (value, normalizedIndex) => {
+        let rawIndex = 0;
+        let normalizedCount = 0;
+        const clampedIndex = Math.max(0, normalizedIndex);
+        while (rawIndex < value.length && normalizedCount < clampedIndex) {
+            if (value[rawIndex] === '\r' && value[rawIndex + 1] === '\n') {
+                rawIndex += 2;
+                normalizedCount += 1;
+            } else {
+                rawIndex += 1;
+                normalizedCount += 1;
+            }
+        }
+        return rawIndex;
+    };
     const scrollToCursor = () => {
         const sectionContent = $('#section-content')[0];
         const fulltext = sectionContent.value;
         const cursorPosition = sectionContent.selectionStart;
+        const cursorPositionEnd = sectionContent.selectionEnd;
         const beforeCursor = sectionContent.value.slice(0, cursorPosition);
         sectionContent.value = beforeCursor;
         scrollPosX = sectionContent.scrollWidth;
@@ -123,6 +143,7 @@ $(document).ready(function() {
         sectionContent.value = fulltext;
         sectionContent.scrollLeft = -scrollPosX + (sectionContent.clientWidth / 2);
         sectionContent.scrollTop = scrollPosY - (sectionContent.clientHeight / 2);
+        sectionContent.setSelectionRange(cursorPosition, cursorPositionEnd);
     };
         
     if(config.text_vertical_align) {
@@ -164,7 +185,17 @@ $(document).ready(function() {
     $('#highlight-content').css('line-height', $('#section-content').css('line-height'));
     $('#highlight-content').css('white-space', 'pre-wrap');
     $('#highlight-content').css('overflow-wrap', 'break-word');
-    restoreCursorPosition();
+    const setSelectionElement = document.getElementById('set_selection');
+    if (setSelectionElement) {
+        const set_selection = JSON.parse(setSelectionElement.textContent);
+        const sectionContent = $('#section-content')[0];
+        const start = normalizedIndexToTextareaIndex(sectionContent.value, set_selection.start);
+        const end = normalizedIndexToTextareaIndex(sectionContent.value, set_selection.end);
+        sectionContent.focus();
+        sectionContent.setSelectionRange(start, end);
+    } else {
+        restoreCursorPosition();
+    }
     scrollToCursor();
     syncHighlightScroll();
     $('#section-content').on('input', function() {

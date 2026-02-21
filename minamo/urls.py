@@ -12,6 +12,7 @@ urlpatterns = [
     path('book/<int:book_id>/delete/', views.delete_book, name='delete_book'),
     path('book/<int:book_id>/rename/', views.rename_book, name='rename_book'),
     path('book/<int:book_id>/export/', views.export_book, name='export_book'),
+    path('book/<int:book_id>/cross_search/', views.cross_search, name='cross_search'),
     path('book/<int:book_id>/chapters/new/', views.new_chapter, name='new_chapter'),
     path('book/<int:book_id>/chapters/<int:chapter_id>/', views.chapter_detail, name='chapter_detail'),
     path('book/<int:book_id>/chapters/<int:chapter_id>/delete/', views.delete_chapter, name='delete_chapter'),
