@@ -244,13 +244,21 @@ $(document).ready(function() {
         
     if(config.text_vertical_align) {
         $('#section-content-editor').css('writing-mode', 'vertical-rl');
+        $('#section-content-editor').css('-webkit-writing-mode', 'vertical-rl');
         $('#section-content-editor').css('text-orientation', 'mixed');
         $('#section-content-editor').css('height', (config.text_size * config.textarea_height + 30) + 'px');
+        $('#section-content-editor').css('overflow-x', 'auto');
+        $('#section-content-editor').css('overflow-y', 'hidden');
+        $('#section-content-editor').css('-webkit-overflow-scrolling', 'auto');
         $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 15) + 'px');
     } else {
         $('#section-content-editor').css('writing-mode', 'horizontal-tb');
+        $('#section-content-editor').css('-webkit-writing-mode', 'horizontal-tb');
         $('#section-content-editor').css('text-orientation', 'mixed');
         $('#section-content-editor').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
+        $('#section-content-editor').css('overflow-x', 'hidden');
+        $('#section-content-editor').css('overflow-y', 'auto');
+        $('#section-content-editor').css('-webkit-overflow-scrolling', 'touch');
         $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 45) + 'px');
     }
     $('#section-content-editor').css('font-size', config.text_size + 'px');

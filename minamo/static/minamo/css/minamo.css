@@ -59,7 +59,6 @@ body {
     overscroll-behavior: contain;
     color: var(--bs-body-color);
     caret-color: var(--bs-body-color);
-    transform: translateZ(0);
 }
 
 #highlight {
