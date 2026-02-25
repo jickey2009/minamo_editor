@@ -59,14 +59,17 @@ body {
     overscroll-behavior: contain;
     color: var(--bs-body-color);
     caret-color: var(--bs-body-color);
+    transform: translateZ(0);
 }
 
 #highlight {
+    position: absolute;
     z-index: 1;
 }
 
 #edit-section-form {
     position: relative;
+    z-index: 2;
     isolation: isolate;
 }
 
