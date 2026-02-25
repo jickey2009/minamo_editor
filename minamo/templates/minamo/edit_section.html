@@ -20,7 +20,8 @@
 </div>
 <form method="post" id="edit-section-form">
     {% csrf_token %}
-    <textarea name="content" rows="20" cols="100" class="form-control focus-ring" id="section-content">{{ section.content }}</textarea>
+    <div contenteditable="true" id="section-content-editor" class="form-control focus-ring">{{ section.content }}</div>
+    <textarea name="content" rows="20" cols="100" class="form-control focus-ring d-none" id="section-content">{{ section.content }}</textarea>
     <div id="show-buttons" class="text-center mt-2 d-none">
         <a class="btn" id="show-buttons-button"></a>
     </div>
@@ -87,23 +88,35 @@ $(document).ready(function() {
 
     const cursorStorageKey = 'minamo:section-cursor:{{ section.id }}';
     const syncHighlightLayout = () => {
-        const sectionContent = $('#section-content')[0];
+        const sectionContent = $('#section-content-editor')[0];
         $('#highlight').css('overflow', 'auto');
         $('#highlight-content').css('width', sectionContent.scrollWidth + 'px');
         $('#highlight-content').css('height', sectionContent.scrollHeight + 'px');
     };
     const syncHighlightScroll = () => {
-        const sectionContent = $('#section-content')[0];
+        const sectionContent = $('#section-content-editor')[0];
         const highlight = $('#highlight')[0];
         highlight.scrollTop = sectionContent.scrollTop;
         highlight.scrollLeft = sectionContent.scrollLeft;
     };
     const saveCursorPosition = () => {
-        const sectionContent = $('#section-content')[0];
-        localStorage.setItem(cursorStorageKey, String(sectionContent.selectionStart));
+        const sectionContentEditor = $('#section-content-editor')[0];
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        if (!sectionContentEditor.contains(range.startContainer)) {
+            return;
+        }
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(sectionContentEditor);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        const cursorPosition = preCaretRange.toString().length;
+        localStorage.setItem(cursorStorageKey, String(cursorPosition));
     };
     const restoreCursorPosition = () => {
-        const sectionContent = $('#section-content')[0];
+        const sectionContentEditor = $('#section-content-editor')[0];
         const savedPosition = localStorage.getItem(cursorStorageKey);
         if (savedPosition === null) {
             return;
@@ -112,9 +125,40 @@ $(document).ready(function() {
         if (Number.isNaN(parsedPosition)) {
             return;
         }
-        const cursorPosition = Math.max(0, Math.min(parsedPosition, sectionContent.value.length));
-        sectionContent.focus();
-        sectionContent.setSelectionRange(cursorPosition, cursorPosition);
+        const textLength = sectionContentEditor.textContent.length;
+        const cursorPosition = Math.max(0, Math.min(parsedPosition, textLength));
+        const selection = window.getSelection();
+        const range = document.createRange();
+        const walker = document.createTreeWalker(sectionContentEditor, NodeFilter.SHOW_TEXT);
+        let remaining = cursorPosition;
+        let currentNode = walker.nextNode();
+        let lastTextNode = null;
+
+        while (currentNode) {
+            lastTextNode = currentNode;
+            const nodeLength = currentNode.textContent.length;
+            if (remaining <= nodeLength) {
+                range.setStart(currentNode, remaining);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                sectionContentEditor.focus();
+                return;
+            }
+            remaining -= nodeLength;
+            currentNode = walker.nextNode();
+        }
+
+        if (lastTextNode) {
+            range.setStart(lastTextNode, lastTextNode.textContent.length);
+            range.collapse(true);
+        } else {
+            range.selectNodeContents(sectionContentEditor);
+            range.collapse(true);
+        }
+        selection.removeAllRanges();
+        selection.addRange(range);
+        sectionContentEditor.focus();
     };
     const normalizedIndexToTextareaIndex = (value, normalizedIndex) => {
         let rawIndex = 0;
@@ -131,42 +175,95 @@ $(document).ready(function() {
         }
         return rawIndex;
     };
+    const syncTextareaFromEditor = () => {
+        const sectionContentEditor = $('#section-content-editor')[0];
+        $('#section-content').val(sectionContentEditor.textContent);
+    };
+    const resolveTextNodePosition = (root, targetOffset) => {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        let remaining = Math.max(0, targetOffset);
+        let currentNode = walker.nextNode();
+        let lastTextNode = null;
+
+        while (currentNode) {
+            lastTextNode = currentNode;
+            const nodeLength = currentNode.textContent.length;
+            if (remaining <= nodeLength) {
+                return { node: currentNode, offset: remaining };
+            }
+            remaining -= nodeLength;
+            currentNode = walker.nextNode();
+        }
+
+        if (lastTextNode) {
+            return { node: lastTextNode, offset: lastTextNode.textContent.length };
+        }
+        return { node: root, offset: 0 };
+    };
+    const setEditorSelection = (startOffset, endOffset) => {
+        const sectionContentEditor = $('#section-content-editor')[0];
+        const textLength = sectionContentEditor.textContent.length;
+        const clampedStart = Math.max(0, Math.min(startOffset, textLength));
+        const clampedEnd = Math.max(0, Math.min(endOffset, textLength));
+        const startPosition = resolveTextNodePosition(sectionContentEditor, clampedStart);
+        const endPosition = resolveTextNodePosition(sectionContentEditor, clampedEnd);
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.setStart(startPosition.node, startPosition.offset);
+        range.setEnd(endPosition.node, endPosition.offset);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        sectionContentEditor.focus();
+    };
     const scrollToCursor = () => {
-        const sectionContent = $('#section-content')[0];
-        const fulltext = sectionContent.value;
-        const cursorPosition = sectionContent.selectionStart;
-        const cursorPositionEnd = sectionContent.selectionEnd;
-        const beforeCursor = sectionContent.value.slice(0, cursorPosition);
-        sectionContent.value = beforeCursor;
-        scrollPosX = sectionContent.scrollWidth;
-        scrollPosY = sectionContent.scrollHeight;
-        sectionContent.value = fulltext;
-        sectionContent.scrollLeft = -scrollPosX + (sectionContent.clientWidth / 2);
-        sectionContent.scrollTop = scrollPosY - (sectionContent.clientHeight / 2);
-        sectionContent.setSelectionRange(cursorPosition, cursorPositionEnd);
+        const sectionContentEditor = $('#section-content-editor')[0];
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return;
+        }
+        const originalRange = selection.getRangeAt(0).cloneRange();
+        if (!sectionContentEditor.contains(originalRange.startContainer)) {
+            return;
+        }
+
+        const markerRange = originalRange.cloneRange();
+        markerRange.collapse(true);
+        const marker = document.createElement('span');
+        marker.textContent = '\u200b';
+        markerRange.insertNode(marker);
+
+        const editorRect = sectionContentEditor.getBoundingClientRect();
+        const markerRect = marker.getBoundingClientRect();
+        sectionContentEditor.scrollLeft += (markerRect.left - editorRect.left) - (sectionContentEditor.clientWidth / 2);
+        sectionContentEditor.scrollTop += (markerRect.top - editorRect.top) - (sectionContentEditor.clientHeight / 2);
+
+        marker.remove();
+        selection.removeAllRanges();
+        selection.addRange(originalRange);
     };
         
     if(config.text_vertical_align) {
-        $('#section-content').css('writing-mode', 'vertical-rl');
-        $('#section-content').css('text-orientation', 'mixed');
-        $('#section-content').css('height', (config.text_size * config.textarea_height + 30) + 'px');
+        $('#section-content-editor').css('writing-mode', 'vertical-rl');
+        $('#section-content-editor').css('text-orientation', 'mixed');
+        $('#section-content-editor').css('height', (config.text_size * config.textarea_height + 30) + 'px');
         $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 15) + 'px');
     } else {
-        $('#section-content').css('writing-mode', 'horizontal-tb');
-        $('#section-content').css('text-orientation', 'mixed');
-        $('#section-content').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
+        $('#section-content-editor').css('writing-mode', 'horizontal-tb');
+        $('#section-content-editor').css('text-orientation', 'mixed');
+        $('#section-content-editor').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
         $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 45) + 'px');
     }
-    $('#section-content').css('font-size', config.text_size + 'px');
-    $('#section-content').css('line-height', (config.text_size * 1.5) + 'px');
+    $('#section-content-editor').css('font-size', config.text_size + 'px');
+    $('#section-content-editor').css('line-height', (config.text_size * 1.5) + 'px');
     
     if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
         $('#edit-section-form').css('width', '100%');
     }
-    $('#section-length').text('文字数: ' + $('#section-content').val().length);
-    offset = $('#section-content').offset();
-    width = $('#section-content').outerWidth();
-    height = $('#section-content').outerHeight();
+    syncTextareaFromEditor();
+    $('#section-length').text('文字数: ' + $('#section-content-editor')[0].textContent.length);
+    offset = $('#section-content-editor').offset();
+    width = $('#section-content-editor').outerWidth();
+    height = $('#section-content-editor').outerHeight();
     $('#highlight').css('left', offset.left);
     $('#highlight').css('top', offset.top);
     $('#highlight').css('width', width);
@@ -180,26 +277,30 @@ $(document).ready(function() {
         $('#highlight').css('writing-mode', 'horizontal-tb');
         $('#highlight').css('text-orientation', 'mixed');
     }
-    $('#highlight-content').css('padding', $('#section-content').css('padding'));
-    $('#highlight-content').css('font-size', $('#section-content').css('font-size'));
-    $('#highlight-content').css('line-height', $('#section-content').css('line-height'));
+    $('#highlight-content').css('padding', $('#section-content-editor').css('padding'));
+    $('#highlight-content').css('font-size', $('#section-content-editor').css('font-size'));
+    $('#highlight-content').css('line-height', $('#section-content-editor').css('line-height'));
     $('#highlight-content').css('white-space', 'pre-wrap');
     $('#highlight-content').css('overflow-wrap', 'break-word');
     const setSelectionElement = document.getElementById('set_selection');
     if (setSelectionElement) {
         const set_selection = JSON.parse(setSelectionElement.textContent);
-        const sectionContent = $('#section-content')[0];
-        const start = normalizedIndexToTextareaIndex(sectionContent.value, set_selection.start);
-        const end = normalizedIndexToTextareaIndex(sectionContent.value, set_selection.end);
-        sectionContent.focus();
-        sectionContent.setSelectionRange(start, end);
+        const sectionContentEditor = $('#section-content-editor')[0];
+        const content = sectionContentEditor.textContent;
+        const start = normalizedIndexToTextareaIndex(content, set_selection.start);
+        const end = normalizedIndexToTextareaIndex(content, set_selection.end);
+        setEditorSelection(start, end);
     } else {
         restoreCursorPosition();
     }
     scrollToCursor();
     syncHighlightScroll();
-    $('#section-content').on('input', function() {
-        $('#section-length').text('文字数: ' + $(this).val().length);
+    $('#section-content-editor').on('input', function() {
+        syncTextareaFromEditor();
+        $('#section-length').text('文字数: ' + this.textContent.length);
+    });
+    $('#edit-section-form').on('submit', function() {
+        syncTextareaFromEditor();
     });
     $(window).on('beforeunload', function() {
         saveCursorPosition();
@@ -224,7 +325,7 @@ $(document).ready(function() {
     $('#search-input').on('input click', function() {
         const query = $('#search-input').val();
         if (query) {
-            const content = $('#section-content').val();
+            const content = $('#section-content-editor')[0].textContent;
             const regex = new RegExp(query, 'gi');
             let highlightedContent = content.replace(regex, (match) => `<span class="highlight">${match}</span>`);
             highlightedContent = highlightedContent.replace(/\n/g, '<br>');
@@ -242,10 +343,12 @@ $(document).ready(function() {
             const query = $('#search-input').val();
             const replacement = $('#replace-input').val();
             if (query) {
-                const content = $('#section-content').val();
+                const sectionContentEditor = $('#section-content-editor')[0];
+                const content = sectionContentEditor.textContent;
                 const regex = new RegExp(query, 'gi');
                 const newContent = content.replace(regex, replacement);
-                $('#section-content').val(newContent);
+                sectionContentEditor.textContent = newContent;
+                syncTextareaFromEditor();
                 $('#section-length').text('文字数: ' + newContent.length);
                 saveCursorPosition();
                 $('#highlight-content').removeClass('d-none');
@@ -267,28 +370,28 @@ $(document).ready(function() {
                 }, 2000);
             }
         });
-    $('#section-content').on('scroll', function() {
+    $('#section-content-editor').on('scroll', function() {
         syncHighlightScroll();
     });
-    $('#section-content').on('click', function() {
+    $('#section-content-editor').on('click', function() {
         $('#highlight-content').addClass('d-none');
     });
     $('#hide-buttons').click(function() {
         $('.hideable').addClass('d-none');
         $('#show-buttons').removeClass('d-none');
-        offset = $('#section-content').offset();
+        offset = $('#section-content-editor').offset();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
     });
     $('#show-buttons-button').click(function() {
         $('.hideable').removeClass('d-none');
         $('#show-buttons').addClass('d-none');
-        offset = $('#section-content').offset();
+        offset = $('#section-content-editor').offset();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
     });
     $(window).on('resize', function() {
-        offset = $('#section-content').offset();
+        offset = $('#section-content-editor').offset();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
     });
