@@ -50,17 +50,24 @@ body {
 #section-content-editor {
     position: relative;
     width: 100%;
-    z-index: 2;
+    z-index: 3;
     border: 0px;
     background-color: transparent;
     white-space: pre-wrap;
     overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     color: var(--bs-body-color);
     caret-color: var(--bs-body-color);
 }
 
 #highlight {
     z-index: 1;
+}
+
+#edit-section-form {
+    position: relative;
+    isolation: isolate;
 }
 
 #highlight-content {
