@@ -63,9 +63,14 @@ body {
     background-color: black;
 }
 
-#section-content {
+#highlight-content {
     color: #e8f0d8;
-    --bs-focus-ring-color: #181038;
+}
+
+#section-content-editor {
+    color: #e8f0d8;
+    caret-color: #e8f0d8;
+    --bs-focus-ring-color: #181038 !important;
     scrollbar-color: #303040 black;
 }
 

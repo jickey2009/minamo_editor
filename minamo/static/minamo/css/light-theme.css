@@ -25,11 +25,12 @@ body {
     background-color: white;
 }
 
+
 #show-buttons-button {
     background-color: #DDE;
 }
 
-#section-content {
-    --bs-focus-ring-color: #e8f0d8;
-    scrollbar-color: #DDE white;
+#section-content-editor {
+    --bs-focus-ring-color: #e8f0d8 !important;
+    scrollbar-color: #DDE white !important;
 }

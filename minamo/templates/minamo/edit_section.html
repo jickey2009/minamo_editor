@@ -21,6 +21,10 @@
 <form method="post" id="edit-section-form">
     {% csrf_token %}
     <div contenteditable="true" id="section-content-editor" class="form-control focus-ring">{{ section.content }}</div>
+    <!-- div for highlighting -->
+    <div id="highlight" class="position-absolute {% if user.configuration.text_vertical_align %}overflow-x-scroll{% else %}overflow-y-scroll{% endif %}" style="pointer-events: none;">
+        <div id="highlight-content" class="position-relative"></div>
+    </div>
     <textarea name="content" rows="20" cols="100" class="form-control focus-ring d-none" id="section-content">{{ section.content }}</textarea>
     <div id="show-buttons" class="text-center mt-2 d-none">
         <a class="btn" id="show-buttons-button"></a>
@@ -48,11 +52,6 @@
 <a class="btn btn-secondary mb-3 d-none" id="close-search">閉じる</a>
 <p id="search-warning" class="d-none text-danger">検索文字列を入力してください。</p>
 </form>
-
-<!-- div for highlighting -->
-<div id="highlight" class="position-absolute {% if user.configuration.text_vertical_align %}overflow-x-scroll{% else %}overflow-y-scroll{% endif %}" style="pointer-events: none;">
-    <div id="highlight-content" class="position-relative d-none"></div>
-</div>
 
 <p id="debug"></p>
 
@@ -90,14 +89,64 @@ $(document).ready(function() {
     const syncHighlightLayout = () => {
         const sectionContent = $('#section-content-editor')[0];
         $('#highlight').css('overflow', 'auto');
-        $('#highlight-content').css('width', sectionContent.scrollWidth + 'px');
-        $('#highlight-content').css('height', sectionContent.scrollHeight + 'px');
+        if (config.text_vertical_align) {
+            $('#highlight-content').css('width', sectionContent.scrollHeight + 'px');
+            $('#highlight-content').css('height', sectionContent.scrollWidth + 'px');
+        } else {
+            $('#highlight-content').css('width', sectionContent.scrollWidth + 'px');
+            $('#highlight-content').css('height', sectionContent.scrollHeight + 'px');
+        }
     };
     const syncHighlightScroll = () => {
         const sectionContent = $('#section-content-editor')[0];
         const highlight = $('#highlight')[0];
-        highlight.scrollTop = sectionContent.scrollTop;
-        highlight.scrollLeft = sectionContent.scrollLeft;
+        if (config.text_vertical_align) {
+            highlight.scrollTop = sectionContent.scrollLeft;
+            highlight.scrollLeft = sectionContent.scrollTop * -1;
+        } else {
+            highlight.scrollTop = sectionContent.scrollTop;
+            highlight.scrollLeft = sectionContent.scrollLeft;
+        }
+    };
+    const renderPlainHighlightText = () => {
+        $('#highlight-content').text($('#section-content-editor')[0].textContent);
+    };
+    const syncHighlightTypography = () => {
+        const sectionContentEditor = $('#section-content-editor')[0];
+        const highlightContent = $('#highlight-content')[0];
+        const styles = window.getComputedStyle(sectionContentEditor);
+        highlightContent.style.fontFamily = styles.fontFamily;
+        highlightContent.style.fontWeight = styles.fontWeight;
+        highlightContent.style.fontStyle = styles.fontStyle;
+        highlightContent.style.fontSize = styles.fontSize;
+        highlightContent.style.lineHeight = styles.lineHeight;
+        highlightContent.style.letterSpacing = styles.letterSpacing;
+        highlightContent.style.wordSpacing = styles.wordSpacing;
+        highlightContent.style.fontKerning = styles.fontKerning;
+        highlightContent.style.fontFeatureSettings = styles.fontFeatureSettings;
+        highlightContent.style.fontVariantLigatures = styles.fontVariantLigatures;
+        highlightContent.style.textTransform = styles.textTransform;
+        highlightContent.style.textIndent = styles.textIndent;
+        highlightContent.style.tabSize = styles.tabSize;
+        highlightContent.style.paddingTop = styles.paddingTop;
+        highlightContent.style.paddingRight = styles.paddingRight;
+        highlightContent.style.paddingBottom = styles.paddingBottom;
+        highlightContent.style.paddingLeft = styles.paddingLeft;
+        highlightContent.style.paddingInlineStart = styles.paddingInlineStart;
+        highlightContent.style.paddingInlineEnd = styles.paddingInlineEnd;
+        highlightContent.style.paddingBlockStart = styles.paddingBlockStart;
+        highlightContent.style.paddingBlockEnd = styles.paddingBlockEnd;
+        highlightContent.style.marginTop = styles.marginTop;
+        highlightContent.style.marginRight = styles.marginRight;
+        highlightContent.style.marginBottom = styles.marginBottom;
+        highlightContent.style.marginLeft = styles.marginLeft;
+        highlightContent.style.borderTopWidth = styles.borderTopWidth;
+        highlightContent.style.borderRightWidth = styles.borderRightWidth;
+        highlightContent.style.borderBottomWidth = styles.borderBottomWidth;
+        highlightContent.style.borderLeftWidth = styles.borderLeftWidth;
+        highlightContent.style.borderStyle = styles.borderStyle;
+        highlightContent.style.borderColor = 'transparent';
+        highlightContent.style.boxSizing = styles.boxSizing;
     };
     const saveCursorPosition = () => {
         const sectionContentEditor = $('#section-content-editor')[0];
@@ -243,51 +292,80 @@ $(document).ready(function() {
     };
         
     if(config.text_vertical_align) {
-        $('#section-content-editor').css('writing-mode', 'vertical-rl');
-        $('#section-content-editor').css('-webkit-writing-mode', 'vertical-rl');
+        $('#section-content-editor').css('writing-mode', 'horizontal-tb');
+        $('#section-content-editor').css('-webkit-writing-mode', 'horizontal-tb');
         $('#section-content-editor').css('text-orientation', 'mixed');
-        $('#section-content-editor').css('height', (config.text_size * config.textarea_height + 30) + 'px');
-        $('#section-content-editor').css('overflow-x', 'auto');
-        $('#section-content-editor').css('overflow-y', 'hidden');
+        $('#section-content-editor').css('transform', 'rotate(90deg)');
+        $('#section-content-editor').css('transform-origin', 'top left');
+        $('#section-content-editor').css('height', (config.text_size * 1.5 * config.textarea_width + 15) + 'px');
+        if($('#section-content-editor').outerHeight() > $('#main_container').width()) {
+            $('#section-content-editor').css('height', $('#main_container').width() + 'px');
+        }
+        $('#section-content-editor').css('width', (config.text_size * config.textarea_height + 30) + 'px');
+        $('#section-content-editor').css('left', $('#section-content-editor').height() + 'px');
+        $('#section-content-editor').css('overflow-x', 'hidden');
+        $('#section-content-editor').css('overflow-y', 'auto');
         $('#section-content-editor').css('-webkit-overflow-scrolling', 'auto');
-        $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 15) + 'px');
+        $('#section-content-editor').css('color', 'transparent');
+        $('#section-content-editor').css('-webkit-text-fill-color', 'transparent');
+
+        $('#highlight').css('writing-mode', 'vertical-rl');
+        $('#highlight').css('text-orientation', 'mixed');
+        $('#highlight-content').css('transform', 'none');
+        $('#highlight-content').css('left', '0');
+        $('#highlight-content').removeClass('d-none');
+        $('#edit-section-form').css('width', $('#section-content-editor').height() + 'px');
+        $('#edit-section-form').css('height', (config.text_size * config.textarea_height + 130) + 'px');
+        $('#show-buttons').css('position', 'absolute');
+        $('#show-buttons').css('width', $('#section-content-editor').height() + 'px');
+        $('#show-buttons').css('top', (config.text_size * config.textarea_height + 30) + 'px');
+        $('#submission').css('position', 'absolute');
+        $('#submission').css('width', $('#section-content-editor').height() + 'px');
+        $('#submission').css('top', (config.text_size * config.textarea_height + 30) + 'px');
     } else {
+        $('#section-content-editor').css('transform', 'none');
+        $('#section-content-editor').css('transform-origin', 'initial');
+        $('#section-content-editor').css('left', '0');
         $('#section-content-editor').css('writing-mode', 'horizontal-tb');
         $('#section-content-editor').css('-webkit-writing-mode', 'horizontal-tb');
         $('#section-content-editor').css('text-orientation', 'mixed');
         $('#section-content-editor').css('height', (config.text_size * 1.5 * config.textarea_height + 15) + 'px');
+        $('#section-content-editor').css('width', '100%');
         $('#section-content-editor').css('overflow-x', 'hidden');
         $('#section-content-editor').css('overflow-y', 'auto');
         $('#section-content-editor').css('-webkit-overflow-scrolling', 'touch');
+        $('#section-content-editor').css('color', 'transparent');
+        $('#section-content-editor').css('-webkit-text-fill-color', 'transparent');
+
+        $('#highlight').css('writing-mode', 'horizontal-tb');
+        $('#highlight').css('text-orientation', 'mixed');
         $('#edit-section-form').css('width', (config.text_size * 1.5 * config.textarea_width + 45) + 'px');
+        if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
+            $('#edit-section-form').css('width', '100%');
+            $('#section-content-editor').css('width', $('#main_container').width() + 'px');
+        }
     }
     $('#section-content-editor').css('font-size', config.text_size + 'px');
     $('#section-content-editor').css('line-height', (config.text_size * 1.5) + 'px');
     
-    if($('#edit-section-form').outerWidth() > $('#main_container').width()) {
-        $('#edit-section-form').css('width', '100%');
-    }
     syncTextareaFromEditor();
+    renderPlainHighlightText();
     $('#section-length').text('文字数: ' + $('#section-content-editor')[0].textContent.length);
-    offset = $('#section-content-editor').offset();
-    width = $('#section-content-editor').outerWidth();
-    height = $('#section-content-editor').outerHeight();
+    offset = $('#section-content-editor').position();
+    if (config.text_vertical_align) {
+        width = $('#section-content-editor').outerHeight();
+        height = $('#section-content-editor').outerWidth();
+    } else {
+        width = $('#section-content-editor').outerWidth();
+        height = $('#section-content-editor').outerHeight();
+    }
     $('#highlight').css('left', offset.left);
     $('#highlight').css('top', offset.top);
     $('#highlight').css('width', width);
     $('#highlight').css('height', height);
     syncHighlightLayout();
     syncHighlightScroll();
-    if(config.text_vertical_align) {
-        $('#highlight').css('writing-mode', 'vertical-rl');
-        $('#highlight').css('text-orientation', 'mixed');
-    } else {
-        $('#highlight').css('writing-mode', 'horizontal-tb');
-        $('#highlight').css('text-orientation', 'mixed');
-    }
-    $('#highlight-content').css('padding', $('#section-content-editor').css('padding'));
-    $('#highlight-content').css('font-size', $('#section-content-editor').css('font-size'));
-    $('#highlight-content').css('line-height', $('#section-content-editor').css('line-height'));
+    syncHighlightTypography();
     $('#highlight-content').css('white-space', 'pre-wrap');
     $('#highlight-content').css('overflow-wrap', 'break-word');
     const setSelectionElement = document.getElementById('set_selection');
@@ -306,7 +384,31 @@ $(document).ready(function() {
     $('#section-content-editor').on('input', function() {
         syncTextareaFromEditor();
         $('#section-length').text('文字数: ' + this.textContent.length);
+        renderPlainHighlightText();
+        syncHighlightLayout();
+        syncHighlightScroll();
     });
+    $('#section-content-editor').on('keydown', function(event) {
+        if (!event.key.startsWith('Arrow') || !config.text_vertical_align) return;
+        event.preventDefault();
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        const action = event.shiftKey ? 'extend' : 'move';
+        switch (event.key) {
+            case 'ArrowUp':
+                selection.modify(action, 'backward', 'character');
+                break;
+            case 'ArrowDown':
+                selection.modify(action, 'forward', 'character');
+                break;
+            case 'ArrowLeft':
+                selection.modify(action, 'forward', 'line');
+                break;
+            case 'ArrowRight':
+                selection.modify(action, 'backward', 'line');
+                break;
+        }
+    })
     $('#edit-section-form').on('submit', function() {
         syncTextareaFromEditor();
     });
@@ -328,7 +430,7 @@ $(document).ready(function() {
         $('#replace-button').addClass('d-none');
         $('#close-search').addClass('d-none');
         $('#open-search').removeClass('d-none');
-        $('#highlight-content').addClass('d-none');
+        renderPlainHighlightText();
     });
     $('#search-input').on('input click', function() {
         const query = $('#search-input').val();
@@ -344,7 +446,7 @@ $(document).ready(function() {
             syncHighlightScroll();
             requestAnimationFrame(syncHighlightScroll);
         } else {
-            $('#highlight-content').addClass('d-none');
+            renderPlainHighlightText();
         }
     });
         $('#replace-button').click(function() {
@@ -381,27 +483,26 @@ $(document).ready(function() {
     $('#section-content-editor').on('scroll', function() {
         syncHighlightScroll();
     });
-    $('#section-content-editor').on('click', function() {
-        $('#highlight-content').addClass('d-none');
-    });
+    
     $('#hide-buttons').click(function() {
         $('.hideable').addClass('d-none');
         $('#show-buttons').removeClass('d-none');
-        offset = $('#section-content-editor').offset();
+        offset = $('#section-content-editor').position();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
     });
     $('#show-buttons-button').click(function() {
         $('.hideable').removeClass('d-none');
         $('#show-buttons').addClass('d-none');
-        offset = $('#section-content-editor').offset();
+        offset = $('#section-content-editor').position();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
     });
     $(window).on('resize', function() {
-        offset = $('#section-content-editor').offset();
+        offset = $('#section-content-editor').position();
         $('#highlight').css('left', offset.left);
         $('#highlight').css('top', offset.top);
+        syncHighlightTypography();
     });
     setTimeout(() => {
         $('#alert-saved').alert('close');

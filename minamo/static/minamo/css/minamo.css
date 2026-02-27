@@ -50,7 +50,7 @@ body {
 #section-content-editor {
     position: relative;
     width: 100%;
-    z-index: 3;
+    z-index: 4;
     border: 0px;
     background-color: transparent;
     white-space: pre-wrap;
@@ -61,9 +61,28 @@ body {
     caret-color: var(--bs-body-color);
 }
 
+
+#section-content-editor::selection,
+#section-content-editor *::selection {
+    background-color: rgba(128, 128, 192, 0.3) !important;
+    color: rgba(128, 128, 192, 0) !important;
+    -webkit-text-fill-color: rgba(128, 128, 192, 0.3) !important;
+}
+
+#section-content-editor::-moz-selection,
+#section-content-editor *::-moz-selection {
+    background-color: rgba(128, 128, 192, 0.3) !important;
+    color: rgba(128, 128, 192, 0) !important;
+}
+
 #highlight {
     position: absolute;
     z-index: 1;
+}
+
+#highlight-content {
+    white-space: pre-wrap;
+    text-wrap: break-word;
 }
 
 #edit-section-form {
@@ -72,9 +91,6 @@ body {
     isolation: isolate;
 }
 
-#highlight-content {
-    color: transparent;
-}
 
 #submission {
     width: 100%;
