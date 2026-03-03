@@ -108,8 +108,12 @@ $(document).ready(function() {
             highlight.scrollLeft = sectionContent.scrollLeft;
         }
     };
+    const getEditorPlainText = () => {
+        const sectionContentEditor = $('#section-content-editor')[0];
+        return sectionContentEditor.innerText.replace(/\r\n/g, '\n');
+    };
     const renderPlainHighlightText = () => {
-        $('#highlight-content').text($('#section-content-editor')[0].textContent);
+        $('#highlight-content').text(getEditorPlainText());
     };
     const syncHighlightTypography = () => {
         const sectionContentEditor = $('#section-content-editor')[0];
@@ -225,8 +229,7 @@ $(document).ready(function() {
         return rawIndex;
     };
     const syncTextareaFromEditor = () => {
-        const sectionContentEditor = $('#section-content-editor')[0];
-        $('#section-content').val(sectionContentEditor.textContent);
+        $('#section-content').val(getEditorPlainText());
     };
     const resolveTextNodePosition = (root, targetOffset) => {
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -350,7 +353,7 @@ $(document).ready(function() {
     
     syncTextareaFromEditor();
     renderPlainHighlightText();
-    $('#section-length').text('文字数: ' + $('#section-content-editor')[0].textContent.length);
+    $('#section-length').text('文字数: ' + getEditorPlainText().length);
     offset = $('#section-content-editor').position();
     if (config.text_vertical_align) {
         width = $('#section-content-editor').outerHeight();
@@ -383,7 +386,7 @@ $(document).ready(function() {
     syncHighlightScroll();
     $('#section-content-editor').on('input', function() {
         syncTextareaFromEditor();
-        $('#section-length').text('文字数: ' + this.textContent.length);
+        $('#section-length').text('文字数: ' + getEditorPlainText().length);
         renderPlainHighlightText();
         syncHighlightLayout();
         syncHighlightScroll();
@@ -435,7 +438,7 @@ $(document).ready(function() {
     $('#search-input').on('input click', function() {
         const query = $('#search-input').val();
         if (query) {
-            const content = $('#section-content-editor')[0].textContent;
+            const content = getEditorPlainText();
             const regex = new RegExp(query, 'gi');
             let highlightedContent = content.replace(regex, (match) => `<span class="highlight">${match}</span>`);
             highlightedContent = highlightedContent.replace(/\n/g, '<br>');
@@ -454,10 +457,10 @@ $(document).ready(function() {
             const replacement = $('#replace-input').val();
             if (query) {
                 const sectionContentEditor = $('#section-content-editor')[0];
-                const content = sectionContentEditor.textContent;
+                const content = getEditorPlainText();
                 const regex = new RegExp(query, 'gi');
                 const newContent = content.replace(regex, replacement);
-                sectionContentEditor.textContent = newContent;
+                sectionContentEditor.innerText = newContent;
                 syncTextareaFromEditor();
                 $('#section-length').text('文字数: ' + newContent.length);
                 saveCursorPosition();
