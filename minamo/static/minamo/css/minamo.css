@@ -52,11 +52,13 @@ body {
     width: 100%;
     z-index: 4;
     border: 0px;
+    padding: 0px;
     background-color: transparent;
     white-space: pre-wrap;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     color: var(--bs-body-color);
     caret-color: var(--bs-body-color);
 }
